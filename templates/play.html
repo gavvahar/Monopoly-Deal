@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Monopoly Deal - Play</title>
+</head>
+<body>
+    <h1>Game Started!</h1>
+    <ul>
+        {% for player in game.players %}
+            <li>{{ player.name }} - Hand: {{ player.hand|length }} cards</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
