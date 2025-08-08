@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Admin - Create User</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <div class="center-container">
+      <h1 class="game-title">Monopoly Deal Admin</h1>
+      <div class="login-box">
+        <h2>Create New User</h2>
+        <form method="post">
+          <label for="new_username">Username:</label>
+          <input type="text" id="new_username" name="new_username" required />
+          <button type="submit">Create User</button>
+        </form>
+        <p>{{ message }}</p>
+        <h3>Existing Users:</h3>
+        <ul>
+          {% for user in users %}
+          <li>{{ user }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </body>
+</html>

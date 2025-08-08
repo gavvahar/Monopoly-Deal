@@ -1,0 +1,24 @@
+<!-- filepath: /home/nihar/Code/Personal/github/Monopoly-Deal/templates/login.html -->
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Login - Monopoly Deal</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
+    <div class="center-container">
+      <h1 class="game-title">Monopoly Deal</h1>
+      <div class="login-box">
+        <h2>Login</h2>
+        <form method="post">
+          <label for="username">Username:</label>
+          <input type="text" id="username" name="username" required />
+          <button type="submit">Login</button>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Monopoly Deal - Home</title>
-</head>
-<body>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
     <h1>Monopoly Deal</h1>
     <form action="/start" method="post">
-        <label>Player Names (comma separated):</label>
-        <input type="text" name="players">
-        <button type="submit">Start Game</button>
+      <label>Player Names (comma separated):</label>
+      <input type="text" name="players" />
+      <button type="submit">Start Game</button>
     </form>
-</body>
+  </body>
 </html>

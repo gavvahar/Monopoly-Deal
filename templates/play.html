@@ -1,14 +1,45 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Monopoly Deal - Play</title>
-</head>
-<body>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
     <h1>Game Started!</h1>
-    <ul>
-        {% for player in game.players %}
-            <li>{{ player.name }} - Hand: {{ player.hand|length }} cards</li>
+    <h2>Current Player: {{ current_player.name }}</h2>
+    <p>{{ message }}</p>
+    <h3>Your Hand:</h3>
+    <form method="post">
+      <ul>
+        {% for card in current_player.hand %}
+        <li>
+          {{ card.name }} ({{ card.card_type }})
+          <button name="action" value="play" type="submit" formaction="/play">
+            Play
+          </button>
+          <input type="hidden" name="card_idx" value="{{ loop.index0 }}" />
+        </li>
         {% endfor %}
+      </ul>
+    </form>
+    <form method="post">
+      <button name="action" value="draw" type="submit">Draw Card</button>
+      <button name="action" value="end_turn" type="submit">End Turn</button>
+    </form>
+    <h3>Properties:</h3>
+    <ul>
+      {% for card in current_player.properties %}
+      <li>{{ card.name }}</li>
+      {% endfor %}
     </ul>
-</body>
+    <h3>All Players:</h3>
+    <ul>
+      {% for player in game.players %}
+      <li>{{ player.name }} - Properties: {{ player.properties|length }}</li>
+      {% endfor %}
+    </ul>
+  </body>
 </html>
