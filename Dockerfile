@@ -11,3 +11,6 @@ ENV FLASK_APP=app.py
 ENV FLASK_RUN_HOST=0.0.0.0
 
 CMD ["flask", "run"]
+
+# No changes needed, but rebuild your image:
+# docker-compose build --no-cache

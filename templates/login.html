@@ -9,13 +9,19 @@
     />
   </head>
   <body>
+    <a href="{{ url_for('admin') }}" class="admin-btn">Admin</a>
     <div class="center-container">
       <h1 class="game-title">Monopoly Deal</h1>
       <div class="login-box">
         <h2>Login</h2>
+        {% if error %}
+        <div style="color: red">{{ error }}</div>
+        {% endif %}
         <form method="post">
           <label for="username">Username:</label>
           <input type="text" id="username" name="username" required />
+          <label for="password">Password:</label>
+          <input type="password" id="password" name="password" required />
           <button type="submit">Login</button>
         </form>
       </div>

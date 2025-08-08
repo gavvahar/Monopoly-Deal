@@ -8,6 +8,7 @@
     />
   </head>
   <body>
+    <a href="{{ url_for('home') }}" class="home-btn">Home</a>
     <div class="center-container">
       <h1 class="game-title">Monopoly Deal Admin</h1>
       <div class="login-box">
@@ -15,7 +16,9 @@
         <form method="post">
           <label for="new_username">Username:</label>
           <input type="text" id="new_username" name="new_username" required />
-          <button type="submit">Create User</button>
+          <label for="new_password">Password:</label>
+          <input type="password" id="new_password" name="new_password" />
+          <button type="submit">Add User</button>
         </form>
         <p>{{ message }}</p>
         <h3>Existing Users:</h3>
