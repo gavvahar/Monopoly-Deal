@@ -3,13 +3,55 @@ from game import MonopolyGame
 import os
 import psycopg2
 from dotenv import load_dotenv
+from os import path
 
-load_dotenv()  # Load environment variables from .env
+
+def initialize():
+    """
+    Load environment variables and return the directory path
+    of the current file.
+    """
+    load_dotenv(path.join(path.dirname(__file__), "./.envs/nihar.env"))
+    return path.dirname(path.realpath(__file__))
+
 
 app = Flask(__name__)
 app.secret_key = "replace_this_with_a_random_secret"
 game = MonopolyGame()
 users = set()
+initialize()
+
+
+def init_db():
+    db_name = os.getenv("POSTGRES_DB", "monopoly")
+    db_user = os.getenv("POSTGRES_USER", "nihar")
+    db_pass = os.getenv("POSTGRES_PASSWORD")
+    db_host = "db"
+    db_port = 5432
+    conn = psycopg2.connect(
+        dbname=db_name,
+        user=db_user,
+        password=db_pass,
+        host=db_host,
+        port=db_port,
+    )
+    cur = conn.cursor()
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(255) UNIQUE NOT NULL,
+            password VARCHAR(255)
+        );
+        """
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+# Call init_db() immediately after loading envs
+init_db()
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -30,7 +72,8 @@ def login():
             game.start_game([username])
             return redirect(url_for("play"))
         else:
-            return render_template("login.html", error="Invalid username or password.")
+            error_text = "Invalid username or password."
+            return render_template("login.html", error=error_text)
     return render_template("login.html")
 
 
@@ -65,13 +108,20 @@ def play():
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
     message = ""
+    # Get DB credentials from environment
+    db_name = os.getenv("POSTGRES_DB", "monopoly")
+    db_user = os.getenv("POSTGRES_USER", "nihar")
+    db_pass = os.getenv("POSTGRES_PASSWORD")
+    db_host = "db"
+    db_port = 5432
+
     # Connect to DB to fetch users
     conn = psycopg2.connect(
-        dbname="monopoly",
-        user="nihar",
-        password=os.getenv("POSTGRES_PASSWORD"),
-        host="db",
-        port=5432,
+        dbname=db_name,
+        user=db_user,
+        password=db_pass,
+        host=db_host,
+        port=db_port,
     )
     cur = conn.cursor()
     cur.execute("SELECT username FROM users;")
@@ -110,31 +160,3 @@ def database():
     cur.close()
     conn.close()
     return render_template("database.html", users_data=users_data)
-
-
-def init_db():
-    conn = psycopg2.connect(
-        dbname="monopoly",
-        user="nihar",
-        password=os.getenv("POSTGRES_PASSWORD"),
-        host="db",
-        port=5432,
-    )
-    cur = conn.cursor()
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username VARCHAR(255) UNIQUE NOT NULL,
-            password VARCHAR(255)
-        );
-    """
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
-
-
-if __name__ == "__main__":
-    init_db()
-    app.run(debug=True)

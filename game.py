@@ -58,4 +58,5 @@ class MonopolyGame:
         return "Unknown card type."
 
     def next_turn(self):
-        self.current_player_idx = (self.current_player_idx + 1) % len(self.players)
+        next_idx = self.current_player_idx + 1
+        self.current_player_idx = next_idx % len(self.players)
