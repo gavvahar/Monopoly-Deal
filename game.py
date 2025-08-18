@@ -2,6 +2,8 @@
 Game logic for Monopoly Deal.
 """
 
+import random
+
 
 class Card:
     """Represents a Monopoly Deal card."""
@@ -43,7 +45,6 @@ class MonopolyGame:
         # Simple deck for demo
         deck = [Card(f"Property {i}", "property") for i in range(1, 11)]
         deck += [Card(f"Money {i}", "money") for i in range(1, 11)]
-        import random
 
         random.shuffle(deck)
         return deck
