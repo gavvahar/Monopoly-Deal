@@ -1,0 +1,26 @@
+name: Format Code with Black
+on:
+ push:
+   branches:
+     - main
+ pull_request:
+jobs:
+ format:
+   runs-on: ubuntu-latest
+   steps:
+     - name: Checkout Code
+       uses: actions/checkout@v3
+     - name: Set Up Python
+       uses: actions/setup-python@v3
+       with:
+         python-version: '3.x'
+     - name: Install Black
+       run: pip install black
+     - name: Run Black Formatter
+       run: black . --check --diff
+     - name: Apply Formatting with Black
+       run: black .
+     - name: Commit Changes
+       uses: EndBug/add-and-commit@v9
+       with:
+         message: "Format code with Black"
