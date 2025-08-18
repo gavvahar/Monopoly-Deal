@@ -261,3 +261,6 @@ def choose_payment(
         "properties_taken": taken,
         "total_paid": paid,
     }
+    
+    
+    
