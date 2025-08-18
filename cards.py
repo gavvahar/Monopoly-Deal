@@ -1,9 +1,13 @@
-# cards.py
+"""
+Monopoly Deal card definitions and deck builder.
+"""
+
 from collections import Counter
 import random
 
 
 def money_cards():
+    """Return dictionary of money cards."""
     return {
         "1M": {"count": 6, "value": 1, "type": "money"},
         "2M": {"count": 5, "value": 2, "type": "money"},
@@ -15,6 +19,7 @@ def money_cards():
 
 
 def property_cards():
+    """Return dictionary of property cards."""
     return {
         "Mediterranean Avenue": {"count": 1, "value": 1, "type": "property"},
         "Baltic Avenue": {"count": 1, "value": 1, "type": "property"},
@@ -48,6 +53,7 @@ def property_cards():
 
 
 def property_wilds():
+    """Return dictionary of property wild cards."""
     return {
         "Blue/Green Wild": {"count": 1, "value": 4, "type": "wild"},
         "Railroad/Utility Wild": {"count": 1, "value": 2, "type": "wild"},
@@ -60,6 +66,7 @@ def property_wilds():
 
 
 def action_cards():
+    """Return dictionary of action cards."""
     return {
         "Deal Breaker": {"count": 2, "value": 5, "type": "action"},
         "Sly Deal": {"count": 3, "value": 3, "type": "action"},
@@ -75,6 +82,7 @@ def action_cards():
 
 
 def rent_cards():
+    """Return dictionary of rent cards."""
     return {
         "Rent Brown/Light Blue": {"count": 2, "value": 1, "type": "rent"},
         "Rent Pink/Orange": {"count": 2, "value": 1, "type": "rent"},
@@ -86,7 +94,7 @@ def rent_cards():
 
 
 def build_deck():
-    """Return the full deck of 110 cards as a list of dicts"""
+    """Return the full deck of 110 cards as a list of dicts."""
     deck = []
 
     for group in (
@@ -106,13 +114,13 @@ def build_deck():
 
 
 def shuffle_deck():
-    """Return a shuffled deck"""
+    """Return a shuffled deck."""
     deck = build_deck()
     random.shuffle(deck)
     return deck
 
 
 if __name__ == "__main__":
-    deck = build_deck()
-    print(f"Total cards: {len(deck)}")
-    print(Counter(c["type"] for c in deck))
+    deck_list = build_deck()
+    print(f"Total cards: {len(deck_list)}")
+    print(Counter(c["type"] for c in deck_list))

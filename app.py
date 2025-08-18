@@ -1,9 +1,14 @@
-from flask import Flask, render_template, request, redirect, url_for, session
-from game import MonopolyGame
+"""
+Flask app for Monopoly Deal game.
+Handles user login, game play, and admin/database operations.
+"""
+
 import os
+from os import path
+from flask import Flask, render_template, request, redirect, url_for, session
 import psycopg2
 from dotenv import load_dotenv
-from os import path
+from game import MonopolyGame
 
 
 def initialize():
@@ -23,6 +28,9 @@ initialize()
 
 
 def init_db():
+    """
+    Initialize the database and create the users table if it does not exist.
+    """
     db_name = os.getenv("POSTGRES_DB", "monopoly")
     db_user = os.getenv("POSTGRES_USER", "nihar")
     db_pass = os.getenv("POSTGRES_PASSWORD")
@@ -56,35 +64,37 @@ init_db()
 
 @app.route("/", methods=["GET", "POST"])
 def home():
+    """Route for home page, redirects to login."""
     return login()
 
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    """Handle user login and start game if credentials are valid."""
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
-        # Use the same credentials as the db container
         db_user = os.getenv("POSTGRES_USER", "nihar")
         db_pass = os.getenv("POSTGRES_PASSWORD")
         if username == db_user and password == db_pass:
             session["username"] = username
             game.start_game([username])
             return redirect(url_for("play"))
-        else:
-            error_text = "Invalid username or password."
-            return render_template("login.html", error=error_text)
+        error_text = "Invalid username or password."
+        return render_template("login.html", error=error_text)
     return render_template("login.html")
 
 
 @app.route("/logout")
 def logout():
+    """Log out the current user."""
     session.pop("username", None)
     return redirect(url_for("login"))
 
 
 @app.route("/play", methods=["GET", "POST"])
 def play():
+    """Main game play route."""
     if "username" not in session:
         return redirect(url_for("login"))
     if not game.started:
@@ -107,6 +117,7 @@ def play():
 
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
+    """Admin page for managing users."""
     message = ""
     # Get DB credentials from environment
     db_name = os.getenv("POSTGRES_DB", "monopoly")
@@ -147,6 +158,7 @@ def admin():
 
 @app.route("/database")
 def database():
+    """Show all users in the database."""
     conn = psycopg2.connect(
         dbname="monopoly",
         user="nihar",
