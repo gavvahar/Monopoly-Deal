@@ -58,7 +58,9 @@ def test_user_repository_logic():
     mock_db.execute_query.return_value = [("alice",), ("bob",), ("charlie",)]
     usernames = user_repo.get_usernames()
     assert usernames == ["alice", "bob", "charlie"]
-    mock_db.execute_query.assert_called_once_with("SELECT username FROM users;", fetch=True)
+    mock_db.execute_query.assert_called_once_with(
+        "SELECT username FROM users;", fetch=True
+    )
     print("✓ get_usernames test passed")
 
     # Reset mock
