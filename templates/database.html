@@ -12,6 +12,11 @@
     <div class="center-container">
       <h1 class="game-title">Database: Users Table</h1>
       <div class="login-box">
+        {% if error %}
+        <div style="color: red; margin-bottom: 1em;">
+          <strong>Database Error:</strong> {{ error }}
+        </div>
+        {% endif %}
         <table>
           <thead>
             <tr>
@@ -31,6 +36,9 @@
             {% endfor %}
           </tbody>
         </table>
+        {% if not users_data and not error %}
+        <p>No users found in the database.</p>
+        {% endif %}
       </div>
     </div>
   </body>

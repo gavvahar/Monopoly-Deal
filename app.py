@@ -6,9 +6,9 @@ Handles user login, game play, and admin/database operations.
 import os
 from os import path
 from flask import Flask, render_template, request, redirect, url_for, session
-import psycopg2
 from dotenv import load_dotenv
 from game import MonopolyGame
+from database import initialize_database
 
 
 def initialize():
@@ -26,40 +26,8 @@ game = MonopolyGame()
 users = set()
 initialize()
 
-
-def init_db():
-    """
-    Initialize the database and create the users table if it does not exist.
-    """
-    db_name = os.getenv("POSTGRES_DB", "monopoly")
-    db_user = os.getenv("POSTGRES_USER", "nihar")
-    db_pass = os.getenv("POSTGRES_PASSWORD")
-    db_host = "db"
-    db_port = 5432
-    conn = psycopg2.connect(
-        dbname=db_name,
-        user=db_user,
-        password=db_pass,
-        host=db_host,
-        port=db_port,
-    )
-    cur = conn.cursor()
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username VARCHAR(255) UNIQUE NOT NULL,
-            password VARCHAR(255)
-        );
-        """
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
-
-
-# Call init_db() immediately after loading envs
-init_db()
+# Initialize database with the new database module
+user_repository = initialize_database()
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -119,56 +87,32 @@ def play():
 def admin():
     """Admin page for managing users."""
     message = ""
-    # Get DB credentials from environment
-    db_name = os.getenv("POSTGRES_DB", "monopoly")
-    db_user = os.getenv("POSTGRES_USER", "nihar")
-    db_pass = os.getenv("POSTGRES_PASSWORD")
-    db_host = "db"
-    db_port = 5432
 
-    # Connect to DB to fetch users
-    conn = psycopg2.connect(
-        dbname=db_name,
-        user=db_user,
-        password=db_pass,
-        host=db_host,
-        port=db_port,
-    )
-    cur = conn.cursor()
-    cur.execute("SELECT username FROM users;")
-    db_users = set(row[0] for row in cur.fetchall())
+    # Get existing users using the database module
+    db_users = set(user_repository.get_usernames())
+
     if request.method == "POST":
         new_user = request.form.get("new_username")
         new_password = request.form.get("new_password")
         if new_user:
-            if new_user in db_users:
+            if user_repository.user_exists(new_user):
                 message = "User already exists."
             else:
-                cur.execute(
-                    "INSERT INTO users (username, password) VALUES (%s, %s);",
-                    (new_user, new_password or ""),
-                )
-                conn.commit()
-                message = f"User '{new_user}' created."
-                db_users.add(new_user)
-    cur.close()
-    conn.close()
+                try:
+                    user_repository.create_user(new_user, new_password or "")
+                    message = f"User '{new_user}' created."
+                    db_users.add(new_user)
+                except Exception as e:
+                    message = f"Error creating user: {str(e)}"
+
     return render_template("admin.html", users=db_users, message=message)
 
 
 @app.route("/database")
 def database():
     """Show all users in the database."""
-    conn = psycopg2.connect(
-        dbname="monopoly",
-        user="nihar",
-        password=os.getenv("POSTGRES_PASSWORD"),
-        host="db",
-        port=5432,
-    )
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM users;")
-    users_data = cur.fetchall()
-    cur.close()
-    conn.close()
-    return render_template("database.html", users_data=users_data)
+    try:
+        users_data = user_repository.get_all_users()
+        return render_template("database.html", users_data=users_data)
+    except Exception as e:
+        return render_template("database.html", users_data=[], error=str(e))
