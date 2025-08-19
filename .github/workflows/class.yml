@@ -1,4 +1,9 @@
 name: Check for Classes in Python Code
+
+on:
+  push:
+  pull_request:
+
 jobs:
   no-classes-check:
     runs-on: ubuntu-latest

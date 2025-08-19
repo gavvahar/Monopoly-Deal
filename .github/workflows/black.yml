@@ -1,4 +1,9 @@
 name: Format Code with Black
+
+on:
+  push:
+  pull_request:
+
 jobs:
  format:
    runs-on: ubuntu-latest
