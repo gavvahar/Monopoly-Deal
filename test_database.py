@@ -5,89 +5,110 @@ Basic tests for the database module to verify functionality.
 
 import os
 from unittest.mock import patch, MagicMock
-from database import DatabaseManager, UserRepository
+import database
 
 
-def test_database_manager_configuration():
-    """Test DatabaseManager configuration handling."""
-    print("Testing DatabaseManager configuration...")
+def test_database_configuration():
+    """Test database configuration handling."""
+    print("Testing database configuration...")
 
-    # Test default configuration
-    db_manager = DatabaseManager()
-    assert db_manager.db_name == os.getenv("POSTGRES_DB", "monopoly")
-    assert db_manager.db_user == os.getenv("POSTGRES_USER", "nihar")
-    assert db_manager.db_host == "db"
-    assert db_manager.db_port == 5432
-    print("✓ Default configuration test passed")
-
-    # Test custom configuration
-    custom_manager = DatabaseManager(
+    # Test configure_database function
+    database.configure_database(
         db_name="test_db",
         db_user="test_user",
         db_password="test_pass",
         db_host="localhost",
         db_port=5433,
     )
-    assert custom_manager.db_name == "test_db"
-    assert custom_manager.db_user == "test_user"
-    assert custom_manager.db_password == "test_pass"
-    assert custom_manager.db_host == "localhost"
-    assert custom_manager.db_port == 5433
+    
+    # Check that configuration was set correctly
+    assert database._db_config["db_name"] == "test_db"
+    assert database._db_config["db_user"] == "test_user"
+    assert database._db_config["db_password"] == "test_pass"
+    assert database._db_config["db_host"] == "localhost"
+    assert database._db_config["db_port"] == 5433
     print("✓ Custom configuration test passed")
 
+    # Test default configuration
+    database.configure_database()
+    assert database._db_config["db_name"] == os.getenv("POSTGRES_DB", "monopoly")
+    assert database._db_config["db_user"] == os.getenv("POSTGRES_USER", "nihar")
+    assert database._db_config["db_host"] == "172.20.0.12"  # Updated default IP
+    assert database._db_config["db_port"] == 5432
+    print("✓ Default configuration test passed")
 
-def test_user_repository_logic():
-    """Test UserRepository logic with mocked database."""
-    print("Testing UserRepository logic...")
 
-    # Mock the database manager
-    mock_db = MagicMock()
-    user_repo = UserRepository(mock_db)
+def test_database_functions():
+    """Test database functions with mocked connections."""
+    print("Testing database functions...")
 
-    # Test create_users_table
-    user_repo.create_users_table()
-    mock_db.execute_query.assert_called_once()
-    create_table_call = mock_db.execute_query.call_args[0][0]
-    assert "CREATE TABLE IF NOT EXISTS users" in create_table_call
-    print("✓ create_users_table test passed")
+    # Mock the execute_query function
+    with patch('database.execute_query') as mock_execute:
+        # Test create_users_table
+        database.create_users_table()
+        mock_execute.assert_called_once()
+        create_table_call = mock_execute.call_args[0][0]
+        assert "CREATE TABLE IF NOT EXISTS users" in create_table_call
+        print("✓ create_users_table test passed")
 
-    # Reset mock
-    mock_db.reset_mock()
+        # Reset mock
+        mock_execute.reset_mock()
 
-    # Test get_usernames
-    mock_db.execute_query.return_value = [("alice",), ("bob",), ("charlie",)]
-    usernames = user_repo.get_usernames()
-    assert usernames == ["alice", "bob", "charlie"]
-    mock_db.execute_query.assert_called_once_with("SELECT username FROM users;", fetch=True)
-    print("✓ get_usernames test passed")
+        # Test get_usernames
+        mock_execute.return_value = [("alice",), ("bob",), ("charlie",)]
+        usernames = database.get_usernames()
+        assert usernames == ["alice", "bob", "charlie"]
+        mock_execute.assert_called_once_with("SELECT username FROM users;", fetch=True)
+        print("✓ get_usernames test passed")
 
-    # Reset mock
-    mock_db.reset_mock()
+        # Reset mock
+        mock_execute.reset_mock()
+
+        # Test get_all_users
+        mock_execute.return_value = [(1, "alice", "pass1"), (2, "bob", "pass2")]
+        users = database.get_all_users()
+        assert users == [(1, "alice", "pass1"), (2, "bob", "pass2")]
+        mock_execute.assert_called_once_with("SELECT * FROM users;", fetch=True)
+        print("✓ get_all_users test passed")
 
     # Test user_exists (with mocked get_usernames)
-    with patch.object(user_repo, "get_usernames", return_value=["alice", "bob"]):
-        assert user_repo.user_exists("alice") is True
-        assert user_repo.user_exists("charlie") is False
+    with patch('database.get_usernames', return_value=["alice", "bob"]):
+        assert database.user_exists("alice") is True
+        assert database.user_exists("charlie") is False
     print("✓ user_exists test passed")
 
     # Test create_user - new user
-    mock_db.reset_mock()
-    with patch.object(user_repo, "user_exists", return_value=False):
-        result = user_repo.create_user("new_user", "password")
+    with patch('database.user_exists', return_value=False), \
+         patch('database.execute_query') as mock_execute:
+        result = database.create_user("new_user", "password")
         assert result is True
-        mock_db.execute_query.assert_called_once_with(
+        mock_execute.assert_called_once_with(
             "INSERT INTO users (username, password) VALUES (%s, %s);",
             ("new_user", "password"),
         )
     print("✓ create_user (new user) test passed")
 
     # Test create_user - existing user
-    mock_db.reset_mock()
-    with patch.object(user_repo, "user_exists", return_value=True):
-        result = user_repo.create_user("existing_user", "password")
+    with patch('database.user_exists', return_value=True), \
+         patch('database.execute_query') as mock_execute:
+        result = database.create_user("existing_user", "password")
         assert result is False
-        mock_db.execute_query.assert_not_called()
+        mock_execute.assert_not_called()
     print("✓ create_user (existing user) test passed")
+
+
+def test_initialize_database():
+    """Test database initialization function."""
+    print("Testing initialize_database...")
+
+    with patch('database.configure_database') as mock_config, \
+         patch('database.create_users_table') as mock_create_table:
+        
+        database.initialize_database()
+        
+        mock_config.assert_called_once()
+        mock_create_table.assert_called_once()
+        print("✓ initialize_database test passed")
 
 
 def main():
@@ -96,8 +117,9 @@ def main():
     print("=" * 40)
 
     try:
-        test_database_manager_configuration()
-        test_user_repository_logic()
+        test_database_configuration()
+        test_database_functions()
+        test_initialize_database()
         print("\n" + "=" * 40)
         print("✅ All tests passed!")
     except Exception as e:

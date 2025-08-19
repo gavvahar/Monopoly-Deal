@@ -8,7 +8,7 @@ from os import path
 from flask import Flask, render_template, request, redirect, url_for, session
 from dotenv import load_dotenv
 from game import MonopolyGame
-from database import initialize_database
+from database import initialize_database, get_usernames, user_exists, create_user, get_all_users
 
 
 def initialize():
@@ -27,7 +27,19 @@ users = set()
 initialize()
 
 # Initialize database with the new database module
-user_repository = initialize_database()
+# Note: This will be called when the app starts, not during import
+def init_database():
+    """Initialize the database when the app starts."""
+    try:
+        initialize_database()
+        print("Database initialized successfully")
+    except Exception as e:
+        print(f"Warning: Could not initialize database: {e}")
+
+
+# Call this when the app actually runs, not during import
+if __name__ == "__main__":
+    init_database()
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -89,17 +101,17 @@ def admin():
     message = ""
 
     # Get existing users using the database module
-    db_users = set(user_repository.get_usernames())
+    db_users = set(get_usernames())
 
     if request.method == "POST":
         new_user = request.form.get("new_username")
         new_password = request.form.get("new_password")
         if new_user:
-            if user_repository.user_exists(new_user):
+            if user_exists(new_user):
                 message = "User already exists."
             else:
                 try:
-                    user_repository.create_user(new_user, new_password or "")
+                    create_user(new_user, new_password or "")
                     message = f"User '{new_user}' created."
                     db_users.add(new_user)
                 except Exception as e:
@@ -112,7 +124,7 @@ def admin():
 def database():
     """Show all users in the database."""
     try:
-        users_data = user_repository.get_all_users()
+        users_data = get_all_users()
         return render_template("database.html", users_data=users_data)
     except Exception as e:
         return render_template("database.html", users_data=[], error=str(e))
