@@ -10,10 +10,7 @@ from database import (
     configure_database,
     initialize_database,
     create_user,
-    user_exists,
     get_usernames,
-    get_all_users,
-    execute_query,
 )
 
 

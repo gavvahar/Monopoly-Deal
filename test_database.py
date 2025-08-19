@@ -4,7 +4,7 @@ Basic tests for the database module to verify functionality.
 """
 
 import os
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import database
 
 

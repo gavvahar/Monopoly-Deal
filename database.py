@@ -37,8 +37,6 @@ def configure_database(
         db_host: Database host (defaults to PostgreSQL container IP "172.20.0.12")
         db_port: Database port (defaults to 5432)
     """
-    global _db_config
-
     # Allow override via environment variables for flexible deployment
     default_host = os.getenv("DB_HOST", db_host)
     if default_host == "db":  # Convert Docker service name to IP for IP-based access
