@@ -75,11 +75,11 @@ def main():
         # These operations will fail without a running database
         usernames = get_usernames()
         print(f"✓ Current users: {usernames}")
-        
+
         # Try creating a user
         success = create_user("demo_user", "demo_password")
         print(f"✓ User creation result: {success}")
-        
+
     except Exception as e:
         print(f"✗ Database operations failed: {e}")
         print("Note: This is expected if PostgreSQL is not running")

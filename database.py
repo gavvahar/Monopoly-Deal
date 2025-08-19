@@ -38,19 +38,21 @@ def configure_database(
         db_port: Database port (defaults to 5432)
     """
     global _db_config
-    
+
     # Allow override via environment variables for flexible deployment
     default_host = os.getenv("DB_HOST", db_host)
     if default_host == "db":  # Convert Docker service name to IP for IP-based access
         default_host = "172.20.0.12"
-    
-    _db_config.update({
-        "db_name": db_name or os.getenv("POSTGRES_DB", "monopoly"),
-        "db_user": db_user or os.getenv("POSTGRES_USER", "nihar"),
-        "db_password": db_password or os.getenv("POSTGRES_PASSWORD"),
-        "db_host": default_host,
-        "db_port": db_port,
-    })
+
+    _db_config.update(
+        {
+            "db_name": db_name or os.getenv("POSTGRES_DB", "monopoly"),
+            "db_user": db_user or os.getenv("POSTGRES_USER", "nihar"),
+            "db_password": db_password or os.getenv("POSTGRES_PASSWORD"),
+            "db_host": default_host,
+            "db_port": db_port,
+        }
+    )
 
 
 def get_database_connection():
@@ -66,7 +68,7 @@ def get_database_connection():
     # Ensure configuration is set
     if _db_config["db_name"] is None:
         configure_database()
-    
+
     return psycopg2.connect(
         dbname=_db_config["db_name"],
         user=_db_config["db_user"],

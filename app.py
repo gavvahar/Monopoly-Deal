@@ -8,7 +8,13 @@ from os import path
 from flask import Flask, render_template, request, redirect, url_for, session
 from dotenv import load_dotenv
 from game import MonopolyGame
-from database import initialize_database, get_usernames, user_exists, create_user, get_all_users
+from database import (
+    initialize_database,
+    get_usernames,
+    user_exists,
+    create_user,
+    get_all_users,
+)
 
 
 def initialize():
@@ -25,6 +31,7 @@ app.secret_key = "replace_this_with_a_random_secret"
 game = MonopolyGame()
 users = set()
 initialize()
+
 
 # Initialize database with the new database module
 # Note: This will be called when the app starts, not during import
