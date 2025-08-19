@@ -84,7 +84,48 @@ def current_player(state):
     """Return current player dict."""
     return state["players"][state["current_player_idx"]]
 
+
+# ---------------- Class-based Wrapper ----------------
+
+
+class MonopolyGame:
+    """Class-based wrapper for the functional game logic."""
+    
+    def __init__(self):
+        self.state = None
+        
+    @property
+    def started(self):
+        """Check if game has started."""
+        return self.state is not None and self.state.get("started", False)
+        
+    @property
+    def players(self):
+        """Get players list."""
+        return self.state["players"] if self.state else []
+        
+    @property
+    def current_player_idx(self):
+        """Get current player index."""
+        return self.state["current_player_idx"] if self.state else 0
+        
+    def start_game(self, player_names):
+        """Start a new game."""
+        self.state = start_game(player_names)
+        
+    def draw_card(self):
+        """Draw a card for current player."""
+        if not self.state:
+            return "Game not started!"
+        return draw_card(self.state)
+        
+    def play_card(self, card_idx):
+        """Play a card from current player's hand."""
+        if not self.state:
+            return "Game not started!"
+        return play_card(self.state, card_idx)
+        
     def next_turn(self):
         """Advance to the next player's turn."""
-        next_idx = self.current_player_idx + 1
-        self.current_player_idx = next_idx % len(self.players)
+        if self.state:
+            next_turn(self.state)
