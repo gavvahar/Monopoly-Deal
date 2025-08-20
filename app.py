@@ -7,7 +7,7 @@ import os
 from os import path
 from flask import Flask, render_template, request, redirect, url_for, session
 from dotenv import load_dotenv
-from game import MonopolyGame
+from game import start_game, draw_card, play_card, next_turn
 from database import (
     initialize_database,
     get_usernames,
@@ -28,7 +28,7 @@ def initialize():
 
 app = Flask(__name__)
 app.secret_key = "replace_this_with_a_random_secret"
-game = MonopolyGame()
+game_state = None
 users = set()
 initialize()
 
@@ -58,6 +58,7 @@ def home():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """Handle user login and start game if credentials are valid."""
+    global game_state
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
@@ -65,7 +66,7 @@ def login():
         db_pass = os.getenv("POSTGRES_PASSWORD")
         if username == db_user and password == db_pass:
             session["username"] = username
-            game.start_game([username])
+            game_state = start_game([username])
             return redirect(url_for("play"))
         error_text = "Invalid username or password."
         return render_template("login.html", error=error_text)
@@ -84,21 +85,24 @@ def play():
     """Main game play route."""
     if "username" not in session:
         return redirect(url_for("login"))
-    if not game.started:
+    if not game_state or not game_state.get("started", False):
         return redirect(url_for("login"))
     message = ""
     if request.method == "POST":
         action = request.form.get("action")
         if action == "draw":
-            message = game.draw_card()
+            message = draw_card(game_state)
         elif action == "play":
             card_idx = int(request.form.get("card_idx"))
-            message = game.play_card(card_idx)
+            message = play_card(game_state, card_idx)
         elif action == "end_turn":
-            game.next_turn()
-    current_player = game.players[game.current_player_idx]
+            next_turn(game_state)
+    current_player = game_state["players"][game_state["current_player_idx"]]
     return render_template(
-        "play.html", game=game, current_player=current_player, message=message
+        "play.html",
+        game_state=game_state,
+        current_player=current_player,
+        message=message
     )
 
 
