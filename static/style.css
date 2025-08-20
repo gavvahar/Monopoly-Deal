@@ -406,7 +406,19 @@ th {
 .theme-toggle {
   position: absolute;
   top: 24px;
-  right: 100px; /* Position to the left of admin button */
+/* Header actions container for admin and theme toggle buttons */
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px; /* Space between buttons */
+  position: relative;
+  top: 24px;
+  right: 24px;
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
   background: var(--bg-secondary);
   color: var(--text-primary);
   border: 1px solid var(--border-primary);
