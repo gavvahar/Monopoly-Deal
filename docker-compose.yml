@@ -5,6 +5,7 @@ x-environment: &environment
   POSTGRES_DB: ${POSTGRES_DB}
   PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
   PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+  WEB_PORT: ${WEB_PORT:-8001}
 
 networks:
   monopoly_network:
@@ -34,7 +35,7 @@ services:
     build: .
     container_name: monopoly_web
     ports:
-      - "8000:8000"
+      - "${WEB_PORT:-8001}:8000"
     networks:
       monopoly_network:
         ipv4_address: 172.20.0.11

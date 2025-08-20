@@ -26,12 +26,12 @@ The Monopoly Deal game has been successfully converted from Flask to FastAPI.
 
 ### Development
 ```bash
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn main:app --host 0.0.0.0 --port 8001 --reload
 ```
 
 ### Production
 ```bash
-uvicorn main:app --host 0.0.0.0 --port 8000
+uvicorn main:app --host 0.0.0.0 --port 8001
 ```
 
 ### Docker
@@ -53,22 +53,23 @@ docker compose up
 ```
 
 **Service Access Points:**
-- Web Application: http://localhost:8000
+- Web Application: http://localhost:8001
 - pgAdmin: http://localhost:5050  
 - PostgreSQL: localhost:5434 (external connections)
-- API Documentation: http://localhost:8000/docs
+- API Documentation: http://localhost:8001/docs
 
 **Troubleshooting Port Conflicts:**
 If you get "port already in use" errors, try these steps:
 1. Stop existing containers: `docker compose down`
-2. Check for conflicting services: `lsof -i :5434` or `netstat -tuln | grep 5434`
-3. Change ports in `docker-compose.yml` if needed (e.g., 5434 → 5435)
+2. Check for conflicting services: `lsof -i :8001` or `netstat -tuln | grep 8001`
+3. Change WEB_PORT in `.env` file (e.g., WEB_PORT=8002)
+4. For PostgreSQL conflicts: `lsof -i :5434` or change to port 5435
 
 ## API Documentation
 
 When running the application, you can access:
-- Interactive API docs: `http://localhost:8000/docs`
-- Alternative docs: `http://localhost:8000/redoc`
+- Interactive API docs: `http://localhost:8001/docs`
+- Alternative docs: `http://localhost:8001/redoc`
 
 ## Testing
 
