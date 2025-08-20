@@ -4,7 +4,7 @@
   --bg-primary: #f7f7fa;
   --bg-secondary: #fff;
   --bg-tertiary: #f0f4f8;
-  --bg-accent: rgba(0,116,217,0.1);
+  --bg-accent: rgba(0, 116, 217, 0.1);
   --text-primary: #2d2d2d;
   --text-secondary: #666;
   --text-accent: #0074d9;
@@ -14,9 +14,9 @@
   --button-primary-hover: #005fa3;
   --button-danger: #ff4136;
   --button-danger-hover: #c12b1e;
-  --shadow-light: rgba(0,0,0,0.05);
-  --shadow-medium: rgba(0,0,0,0.07);
-  --shadow-heavy: rgba(0,0,0,0.15);
+  --shadow-light: rgba(0, 0, 0, 0.05);
+  --shadow-medium: rgba(0, 0, 0, 0.07);
+  --shadow-heavy: rgba(0, 0, 0, 0.15);
 }
 
 /* Dark theme colors */
@@ -24,7 +24,7 @@
   --bg-primary: #1a1a1a;
   --bg-secondary: #2d2d2d;
   --bg-tertiary: #3a3a3a;
-  --bg-accent: rgba(100,149,237,0.2);
+  --bg-accent: rgba(100, 149, 237, 0.2);
   --text-primary: #e5e5e5;
   --text-secondary: #b0b0b0;
   --text-accent: #6495ed;
@@ -34,21 +34,25 @@
   --button-primary-hover: #4169e1;
   --button-danger: #ff6b6b;
   --button-danger-hover: #ff5252;
-  --shadow-light: rgba(0,0,0,0.2);
-  --shadow-medium: rgba(0,0,0,0.3);
-  --shadow-heavy: rgba(0,0,0,0.4);
+  --shadow-light: rgba(0, 0, 0, 0.2);
+  --shadow-medium: rgba(0, 0, 0, 0.3);
+  --shadow-heavy: rgba(0, 0, 0, 0.4);
 }
 
 body {
-  font-family: 'Segoe UI', Arial, sans-serif;
+  font-family: "Segoe UI", Arial, sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
   margin: 0;
   padding: 0;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   color: var(--text-primary);
   margin-top: 1.5em;
   margin-bottom: 0.5em;
@@ -204,7 +208,8 @@ table {
   margin-top: 1em;
 }
 
-th, td {
+th,
+td {
   border: 1px solid var(--border-primary);
   padding: 0.5em 1em;
   text-align: left;
@@ -224,8 +229,10 @@ th {
   padding: 12px;
   border-radius: 12px;
   border: 2px solid #333;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
   position: relative;
   overflow: hidden;
   background: linear-gradient(135deg, #fff 0%, #f8f8f8 100%);
@@ -238,7 +245,7 @@ th {
 
 .card--interactive:hover {
   transform: translateY(-4px);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 .card-header {
@@ -265,7 +272,7 @@ th {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
   border-radius: 50%;
   width: 24px;
   height: 24px;
@@ -404,7 +411,9 @@ th {
   font-size: 1em;
   cursor: pointer;
   box-shadow: 0 2px 8px var(--shadow-medium);
-  transition: background 0.2s, border-color 0.2s;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
   z-index: 100;
   min-width: 60px;
   text-align: center;
@@ -432,7 +441,7 @@ th {
     --bg-primary: #1a1a1a;
     --bg-secondary: #2d2d2d;
     --bg-tertiary: #3a3a3a;
-    --bg-accent: rgba(100,149,237,0.2);
+    --bg-accent: rgba(100, 149, 237, 0.2);
     --text-primary: #e5e5e5;
     --text-secondary: #b0b0b0;
     --text-accent: #6495ed;
@@ -442,9 +451,9 @@ th {
     --button-primary-hover: #4169e1;
     --button-danger: #ff6b6b;
     --button-danger-hover: #ff5252;
-    --shadow-light: rgba(0,0,0,0.2);
-    --shadow-medium: rgba(0,0,0,0.3);
-    --shadow-heavy: rgba(0,0,0,0.4);
+    --shadow-light: rgba(0, 0, 0, 0.2);
+    --shadow-medium: rgba(0, 0, 0, 0.3);
+    --shadow-heavy: rgba(0, 0, 0, 0.4);
   }
 }
 
@@ -458,7 +467,6 @@ input[type="password"] {
   background: var(--bg-secondary);
   color: var(--text-primary);
 }
-
 
 /* Input password field styling */
 input[type="password"] {
