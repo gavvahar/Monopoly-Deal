@@ -3,4 +3,7 @@ __pycache__
 .lh
 .env
 .envs
-
+*.png
+*.jpg
+*.jpeg
+*.gif
