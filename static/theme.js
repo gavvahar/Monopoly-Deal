@@ -83,7 +83,7 @@ class ThemeManager {
     );
 
     // Create options for the dropdown
-    THEME_ORDER.forEach(theme => {
+    THEME_ORDER.forEach((theme) => {
       const option = document.createElement("option");
       option.value = theme;
       option.textContent = THEME_LABELS[theme];
