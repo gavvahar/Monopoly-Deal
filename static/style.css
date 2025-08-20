@@ -510,7 +510,7 @@ input[type="password"] {
 }
 
 .session-code {
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   font-weight: bold;
   font-size: 1.2em;
   color: var(--text-accent);
