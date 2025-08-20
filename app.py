@@ -102,7 +102,7 @@ def play():
         "play.html",
         game_state=game_state,
         current_player=current_player,
-        message=message
+        message=message,
     )
 
 
