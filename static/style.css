@@ -225,14 +225,6 @@ th {
   border-radius: 12px;
   border: 2px solid #333;
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(135deg, #fff 0%, #f8f8f8 100%);
-}
-
-  /* cursor: pointer; removed */
   transition: transform 0.2s, box-shadow 0.2s;
   position: relative;
   overflow: hidden;
@@ -404,21 +396,6 @@ th {
 
 /* Theme Toggle Button */
 .theme-toggle {
-  position: absolute;
-  top: 24px;
-/* Header actions container for admin and theme toggle buttons */
-.header-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 16px; /* Space between buttons */
-  position: relative;
-  top: 24px;
-  right: 24px;
-}
-
-/* Theme Toggle Button */
-.theme-toggle {
   background: var(--bg-secondary);
   color: var(--text-primary);
   border: 1px solid var(--border-primary);
@@ -431,6 +408,17 @@ th {
   z-index: 100;
   min-width: 60px;
   text-align: center;
+}
+
+/* Header actions container for admin and theme toggle buttons */
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px; /* Space between buttons */
+  position: relative;
+  top: 24px;
+  right: 24px;
 }
 
 .theme-toggle:hover {
@@ -459,6 +447,18 @@ th {
     --shadow-heavy: rgba(0,0,0,0.4);
   }
 }
+
+/* Input password field styling */
+input[type="password"] {
+  width: 100%;
+  padding: 0.5em;
+  margin-bottom: 1em;
+  border: 1px solid var(--border-primary);
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
 
 /* Input password field styling */
 input[type="password"] {
