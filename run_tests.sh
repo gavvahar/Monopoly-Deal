@@ -49,12 +49,20 @@ fi
 
 # 4. Python class detection check
 echo -e "${YELLOW}Checking for Python class definitions...${NC}"
-if grep -RInE \
+CLASS_FILES=$(grep -RlnE \
     --include='*.py' \
     --exclude-dir={.git,venv,.venv,node_modules,dist,build,.mypy_cache,.pytest_cache} \
     '^[[:space:]]*class[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*(\(|:)' \
-    . >/dev/null 2>&1; then
+    . 2>/dev/null || true)
+
+if [ -n "$CLASS_FILES" ]; then
     echo -e "${RED}❌ Python class definitions found in the codebase!${NC}"
+    echo -e "${RED}Files containing classes:${NC}"
+    echo "$CLASS_FILES"
+    echo -e "${YELLOW}Hint: If this is unexpected, try rebuilding the Docker container:${NC}"
+    echo -e "${YELLOW}  docker compose down --remove-orphans${NC}"
+    echo -e "${YELLOW}  docker compose --profile test build --no-cache test${NC}"
+    echo -e "${YELLOW}  docker compose --profile test run --rm test${NC}"
     exit 1
 else
     echo -e "${GREEN}✅ No Python classes found - function-based architecture maintained${NC}"

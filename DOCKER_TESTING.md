@@ -114,3 +114,10 @@ Database tests failing is normal without PostgreSQL running:
 - Start database: `docker compose up --build -d db`
 - Wait a few seconds for PostgreSQL to initialize
 - Run tests again
+
+### Docker Cache Issues
+If tests report unexpected results (e.g., class definitions found when none exist):
+- Clear Docker cache: `docker compose down --remove-orphans`
+- Rebuild without cache: `docker compose --profile test build --no-cache test`
+- Run tests again: `docker compose --profile test run --rm test`
+- Check mounted files are current: `docker exec <container> ls -la /app`
