@@ -35,10 +35,34 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
 ### Docker
-The existing Docker setup has been updated and should work as before:
+
+First, copy the environment file and customize it:
 ```bash
-docker-compose up
+cp .env.example .env
+# Edit .env with your preferred database credentials
 ```
+
+If you encounter port conflicts, clean up existing containers first:
+```bash
+docker compose down --remove-orphans --volumes
+```
+
+Then start the application:
+```bash
+docker compose up
+```
+
+**Service Access Points:**
+- Web Application: http://localhost:8000
+- pgAdmin: http://localhost:5050  
+- PostgreSQL: localhost:5434 (external connections)
+- API Documentation: http://localhost:8000/docs
+
+**Troubleshooting Port Conflicts:**
+If you get "port already in use" errors, try these steps:
+1. Stop existing containers: `docker compose down`
+2. Check for conflicting services: `lsof -i :5434` or `netstat -tuln | grep 5434`
+3. Change ports in `docker-compose.yml` if needed (e.g., 5434 → 5435)
 
 ## API Documentation
 

@@ -52,7 +52,7 @@ services:
     environment:
       <<: *environment
     ports:
-      - "5433:5432"
+      - "5434:5432"
     networks:
       monopoly_network:
         ipv4_address: 172.20.0.12
