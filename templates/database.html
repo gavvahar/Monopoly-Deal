@@ -4,11 +4,11 @@
     <title>Database View</title>
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}"
+      href="/static/style.css"
     />
   </head>
   <body>
-    <a href="{{ url_for('home') }}" class="home-btn">Home</a>
+    <a href="/" class="home-btn">Home</a>
     <div class="center-container">
       <h1 class="game-title">Database: Users Table</h1>
       <div class="login-box">
@@ -41,5 +41,6 @@
         {% endif %}
       </div>
     </div>
+    <script src="/static/theme.js"></script>
   </body>
 </html>

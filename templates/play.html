@@ -4,7 +4,7 @@
     <title>Monopoly Deal - Play</title>
     <link
       rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}"
+      href="/static/style.css"
     />
   </head>
   <body>
@@ -66,5 +66,6 @@
       <li>{{ player.name }} - Properties: {{ player.properties|length }}</li>
       {% endfor %}
     </ul>
+    <script src="/static/theme.js"></script>
   </body>
 </html>
