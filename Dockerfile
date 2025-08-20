@@ -7,10 +7,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-ENV FLASK_APP=app.py
-ENV FLASK_RUN_HOST=0.0.0.0
+ENV FASTAPI_APP=main:app
 
-CMD ["flask", "run"]
-
-# No changes needed, but rebuild your image:
-# docker-compose build --no-cache
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

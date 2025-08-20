@@ -1,5 +1,9 @@
-flask
+fastapi
+uvicorn[standard]
+jinja2
+python-multipart
 psycopg2-binary
 python-dotenv
 black
 flake8
+httpx
