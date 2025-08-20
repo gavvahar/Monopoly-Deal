@@ -8,9 +8,11 @@ import random
 
 
 def create_deck():
-    """Create a simple shuffled deck for demo purposes."""
-    deck = [{"name": f"Property {i}", "card_type": "property"} for i in range(1, 11)]
-    deck += [{"name": f"Money {i}", "card_type": "money"} for i in range(1, 11)]
+    """Create a shuffled deck with enough cards for multiplayer games."""
+    # Create enough cards for up to 5 players (5 players x 5 cards = 25 minimum)
+    deck = [{"name": f"Property {i}", "card_type": "property"} for i in range(1, 21)]
+    deck += [{"name": f"Money {i}", "card_type": "money"} for i in range(1, 21)]
+    deck += [{"name": f"Action {i}", "card_type": "action"} for i in range(1, 11)]
     random.shuffle(deck)
     return deck
 
