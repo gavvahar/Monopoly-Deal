@@ -56,6 +56,7 @@ def init_database():
     except Exception as e:
         print(f"Warning: Could not initialize database: {e}")
 
+
 # Use lifespan context manager instead of deprecated on_event
 
 
