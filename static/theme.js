@@ -103,4 +103,4 @@ document.addEventListener('DOMContentLoaded', function() {
 // Export for use in other scripts if needed
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { ThemeManager, THEMES };
-}
+});
