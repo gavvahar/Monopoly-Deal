@@ -1,12 +1,55 @@
+/* CSS Custom Properties for Theme Management */
+:root {
+  /* Light theme colors (default) */
+  --bg-primary: #f7f7fa;
+  --bg-secondary: #fff;
+  --bg-tertiary: #f0f4f8;
+  --bg-accent: rgba(0,116,217,0.1);
+  --text-primary: #2d2d2d;
+  --text-secondary: #666;
+  --text-accent: #0074d9;
+  --border-primary: #ccc;
+  --border-accent: #0074d9;
+  --button-primary: #0074d9;
+  --button-primary-hover: #005fa3;
+  --button-danger: #ff4136;
+  --button-danger-hover: #c12b1e;
+  --shadow-light: rgba(0,0,0,0.05);
+  --shadow-medium: rgba(0,0,0,0.07);
+  --shadow-heavy: rgba(0,0,0,0.15);
+}
+
+/* Dark theme colors */
+[data-theme="dark"] {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #3a3a3a;
+  --bg-accent: rgba(100,149,237,0.2);
+  --text-primary: #e5e5e5;
+  --text-secondary: #b0b0b0;
+  --text-accent: #6495ed;
+  --border-primary: #555;
+  --border-accent: #6495ed;
+  --button-primary: #6495ed;
+  --button-primary-hover: #4169e1;
+  --button-danger: #ff6b6b;
+  --button-danger-hover: #ff5252;
+  --shadow-light: rgba(0,0,0,0.2);
+  --shadow-medium: rgba(0,0,0,0.3);
+  --shadow-heavy: rgba(0,0,0,0.4);
+}
+
 body {
   font-family: 'Segoe UI', Arial, sans-serif;
-  background: #f7f7fa;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   margin: 0;
   padding: 0;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 h1, h2, h3 {
-  color: #2d2d2d;
+  color: var(--text-primary);
   margin-top: 1.5em;
   margin-bottom: 0.5em;
 }
@@ -14,9 +57,9 @@ h1, h2, h3 {
 form {
   margin: 1em 0;
   padding: 1em;
-  background: #fff;
+  background: var(--bg-secondary);
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px var(--shadow-light);
   max-width: 400px;
 }
 
@@ -30,8 +73,10 @@ input[type="text"] {
   width: 100%;
   padding: 0.5em;
   margin-bottom: 1em;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-primary);
   border-radius: 4px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 form input,
@@ -42,7 +87,7 @@ form button {
 }
 
 button {
-  background: #0074d9;
+  background: var(--button-primary);
   color: #fff;
   border: none;
   padding: 0.6em 1.2em;
@@ -54,7 +99,7 @@ button {
 }
 
 button:hover {
-  background: #005fa3;
+  background: var(--button-primary-hover);
 }
 
 ul {
@@ -63,10 +108,11 @@ ul {
 }
 
 li {
-  background: #f0f4f8;
+  background: var(--bg-tertiary);
   margin-bottom: 0.5em;
   padding: 0.5em 1em;
   border-radius: 4px;
+  color: var(--text-primary);
 }
 
 input[type="hidden"] {
@@ -74,7 +120,7 @@ input[type="hidden"] {
 }
 
 p {
-  color: #0074d9;
+  color: var(--text-accent);
   font-weight: 500;
   margin-top: 1em;
 }
@@ -90,31 +136,31 @@ p {
 .game-title {
   font-size: 2.5em;
   font-weight: bold;
-  color: #0074d9;
+  color: var(--text-accent);
   margin-bottom: 0.5em;
   margin-top: 2em;
   letter-spacing: 2px;
 }
 
 .login-box {
-  background: #fff;
+  background: var(--bg-secondary);
   padding: 2em 2.5em;
   border-radius: 10px;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 16px var(--shadow-medium);
   min-width: 320px;
   text-align: center;
 }
 
 .login-box h2 {
   margin-bottom: 1em;
-  color: #2d2d2d;
+  color: var(--text-primary);
 }
 
 .admin-btn {
   position: absolute;
   top: 24px;
   right: 32px;
-  background: #ff4136;
+  background: var(--button-danger);
   color: #fff;
   border: none;
   padding: 0.5em 1.2em;
@@ -122,20 +168,20 @@ p {
   text-decoration: none;
   font-size: 1em;
   font-weight: 500;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  box-shadow: 0 2px 8px var(--shadow-medium);
   transition: background 0.2s;
   z-index: 100;
 }
 
 .admin-btn:hover {
-  background: #c12b1e;
+  background: var(--button-danger-hover);
 }
 
 .home-btn {
   position: absolute;
   top: 24px;
   left: 32px;
-  background: #0074d9;
+  background: var(--button-primary);
   color: #fff;
   border: none;
   padding: 0.5em 1.2em;
@@ -143,13 +189,13 @@ p {
   text-decoration: none;
   font-size: 1em;
   font-weight: 500;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  box-shadow: 0 2px 8px var(--shadow-medium);
   transition: background 0.2s;
   z-index: 100;
 }
 
 .home-btn:hover {
-  background: #005fa3;
+  background: var(--button-primary-hover);
 }
 
 table {
@@ -159,13 +205,13 @@ table {
 }
 
 th, td {
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-primary);
   padding: 0.5em 1em;
   text-align: left;
 }
 
 th {
-  background: #f0f4f8;
+  background: var(--bg-tertiary);
   font-weight: 600;
 }
 
@@ -284,9 +330,9 @@ th {
   gap: 10px;
   margin: 20px 0;
   padding: 20px;
-  background: rgba(255,255,255,0.5);
+  background: var(--bg-accent);
   border-radius: 12px;
-  border: 2px dashed #ccc;
+  border: 2px dashed var(--border-primary);
   min-height: 120px;
 }
 
@@ -294,7 +340,7 @@ th {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #666;
+  color: var(--text-secondary);
   font-style: italic;
 }
 
@@ -308,7 +354,7 @@ th {
   bottom: -10px;
   left: 50%;
   transform: translateX(-50%);
-  background: #0074d9;
+  background: var(--button-primary);
   color: white;
   border: none;
   padding: 4px 12px;
@@ -320,7 +366,7 @@ th {
 }
 
 .card-button:hover {
-  background: #005fa3;
+  background: var(--button-primary-hover);
 }
 
 /* Properties section styling */
@@ -330,9 +376,9 @@ th {
   gap: 10px;
   margin: 20px 0;
   padding: 20px;
-  background: rgba(0,116,217,0.1);
+  background: var(--bg-accent);
   border-radius: 12px;
-  border: 2px solid #0074d9;
+  border: 2px solid var(--border-accent);
   min-height: 80px;
 }
 
@@ -340,7 +386,7 @@ th {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #666;
+  color: var(--text-secondary);
   font-style: italic;
 }
 
@@ -354,4 +400,61 @@ th {
 .property-card .card-name {
   font-size: 10px;
   min-height: 24px;
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+  position: absolute;
+  top: 24px;
+  right: 100px; /* Position to the left of admin button */
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+  padding: 0.5em 0.8em;
+  border-radius: 4px;
+  font-size: 1em;
+  cursor: pointer;
+  box-shadow: 0 2px 8px var(--shadow-medium);
+  transition: background 0.2s, border-color 0.2s;
+  z-index: 100;
+  min-width: 60px;
+  text-align: center;
+}
+
+.theme-toggle:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border-accent);
+}
+
+/* System theme preference detection */
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --bg-tertiary: #3a3a3a;
+    --bg-accent: rgba(100,149,237,0.2);
+    --text-primary: #e5e5e5;
+    --text-secondary: #b0b0b0;
+    --text-accent: #6495ed;
+    --border-primary: #555;
+    --border-accent: #6495ed;
+    --button-primary: #6495ed;
+    --button-primary-hover: #4169e1;
+    --button-danger: #ff6b6b;
+    --button-danger-hover: #ff5252;
+    --shadow-light: rgba(0,0,0,0.2);
+    --shadow-medium: rgba(0,0,0,0.3);
+    --shadow-heavy: rgba(0,0,0,0.4);
+  }
+}
+
+/* Input password field styling */
+input[type="password"] {
+  width: 100%;
+  padding: 0.5em;
+  margin-bottom: 1em;
+  border: 1px solid var(--border-primary);
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
