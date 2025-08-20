@@ -20,7 +20,7 @@ const THEME_ORDER = [THEMES.LIGHT, THEMES.DARK, THEMES.SYSTEM];
 
 class ThemeManager {
   constructor() {
-    this.currentTheme = this.getStoredTheme() || THEMES.LIGHT;
+    this.currentTheme = this.getStoredTheme() || THEMES.SYSTEM;
     this.init();
   }
 
@@ -63,37 +63,48 @@ class ThemeManager {
   toggleTheme() {
     const nextTheme = this.getNextTheme();
     this.applyTheme(nextTheme);
-    this.updateToggleButton();
+    this.updateToggleDropdown();
   }
 
   createThemeToggle() {
     // Check if toggle already exists
     if (document.getElementById("theme-toggle")) {
-      this.updateToggleButton();
+      this.updateToggleDropdown();
       return;
     }
 
-    const toggle = document.createElement("button");
+    const toggle = document.createElement("select");
     toggle.id = "theme-toggle";
     toggle.className = "theme-toggle";
-    toggle.setAttribute("aria-label", "Toggle theme");
+    toggle.setAttribute("aria-label", "Select theme");
     toggle.setAttribute(
       "title",
       "Switch between light, dark, and system themes",
     );
 
-    toggle.addEventListener("click", () => this.toggleTheme());
+    // Create options for the dropdown
+    THEME_ORDER.forEach((theme) => {
+      const option = document.createElement("option");
+      option.value = theme;
+      option.textContent = THEME_LABELS[theme];
+      toggle.appendChild(option);
+    });
 
-    // Insert the toggle button into the page
+    toggle.addEventListener("change", (e) => {
+      this.applyTheme(e.target.value);
+      this.updateToggleDropdown();
+    });
+
+    // Insert the toggle dropdown into the page
     document.body.appendChild(toggle);
 
-    this.updateToggleButton();
+    this.updateToggleDropdown();
   }
 
-  updateToggleButton() {
+  updateToggleDropdown() {
     const toggle = document.getElementById("theme-toggle");
     if (toggle) {
-      toggle.textContent = THEME_LABELS[this.currentTheme];
+      toggle.value = this.currentTheme;
     }
   }
 }
