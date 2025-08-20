@@ -403,6 +403,9 @@ th {
 
 /* Theme Toggle Button */
 .theme-toggle {
+  position: absolute;
+  top: 24px;
+  right: 120px;
   background: var(--bg-secondary);
   color: var(--text-primary);
   border: 1px solid var(--border-primary);
