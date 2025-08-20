@@ -12,29 +12,54 @@
     <h2>Current Player: {{ current_player.name }}</h2>
     <p>{{ message }}</p>
     <h3>Your Hand:</h3>
-    <form method="post">
-      <ul>
+    <div class="hand-container {% if not current_player.hand %}empty{% endif %}">
+      {% if current_player.hand %}
         {% for card in current_player.hand %}
-        <li>
-          {{ card.name }} ({{ card.card_type }})
-          <button name="action" value="play" type="submit" formaction="/play">
-            Play
-          </button>
-          <input type="hidden" name="card_idx" value="{{ loop.index0 }}" />
-        </li>
+        <div class="card-container">
+          <div class="card card-{{ card.card_type }}">
+            <div class="card-header">{{ card.card_type | title }}</div>
+            <div class="card-name">{{ card.name }}</div>
+            <div class="card-value">{{ card.value if card.value else '💎' }}</div>
+            <div class="card-type-icon">
+              {% if card.card_type == 'money' %}💰
+              {% elif card.card_type == 'property' %}🏠
+              {% elif card.card_type == 'action' %}⚡
+              {% elif card.card_type == 'wild' %}🌟
+              {% elif card.card_type == 'rent' %}💸
+              {% endif %}
+            </div>
+          </div>
+          <form method="post" style="display: inline;">
+            <button name="action" value="play" type="submit" formaction="/play" class="card-button">
+              Play
+            </button>
+            <input type="hidden" name="card_idx" value="{{ loop.index0 }}" />
+          </form>
+        </div>
         {% endfor %}
-      </ul>
-    </form>
+      {% else %}
+        <p>No cards in hand</p>
+      {% endif %}
+    </div>
     <form method="post">
       <button name="action" value="draw" type="submit">Draw Card</button>
       <button name="action" value="end_turn" type="submit">End Turn</button>
     </form>
     <h3>Properties:</h3>
-    <ul>
-      {% for card in current_player.properties %}
-      <li>{{ card.name }}</li>
-      {% endfor %}
-    </ul>
+    <div class="properties-container {% if not current_player.properties %}empty{% endif %}">
+      {% if current_player.properties %}
+        {% for card in current_player.properties %}
+        <div class="card property-card card-{{ card.card_type }}">
+          <div class="card-header">{{ card.card_type | title }}</div>
+          <div class="card-name">{{ card.name }}</div>
+          <div class="card-value">{{ card.value if card.value else '💎' }}</div>
+          <div class="card-type-icon">🏠</div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p>No properties owned</p>
+      {% endif %}
+    </div>
     <h3>All Players:</h3>
     <ul>
       {% for player in game_state.players %}
