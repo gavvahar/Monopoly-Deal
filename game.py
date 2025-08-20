@@ -83,8 +83,3 @@ def next_turn(state):
 def current_player(state):
     """Return current player dict."""
     return state["players"][state["current_player_idx"]]
-
-    def next_turn(self):
-        """Advance to the next player's turn."""
-        next_idx = self.current_player_idx + 1
-        self.current_player_idx = next_idx % len(self.players)

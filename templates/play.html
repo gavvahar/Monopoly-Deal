@@ -37,7 +37,7 @@
     </ul>
     <h3>All Players:</h3>
     <ul>
-      {% for player in game.players %}
+      {% for player in game_state.players %}
       <li>{{ player.name }} - Properties: {{ player.properties|length }}</li>
       {% endfor %}
     </ul>

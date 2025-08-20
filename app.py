@@ -6,9 +6,15 @@ Handles user login, game play, and admin/database operations.
 import os
 from os import path
 from flask import Flask, render_template, request, redirect, url_for, session
-import psycopg2
 from dotenv import load_dotenv
-from game import MonopolyGame
+from game import start_game, draw_card, play_card, next_turn
+from database import (
+    initialize_database,
+    get_usernames,
+    user_exists,
+    create_user,
+    get_all_users,
+)
 
 
 def initialize():
@@ -22,44 +28,25 @@ def initialize():
 
 app = Flask(__name__)
 app.secret_key = "replace_this_with_a_random_secret"
-game = MonopolyGame()
+game_state = None
 users = set()
 initialize()
 
 
-def init_db():
-    """
-    Initialize the database and create the users table if it does not exist.
-    """
-    db_name = os.getenv("POSTGRES_DB", "monopoly")
-    db_user = os.getenv("POSTGRES_USER", "nihar")
-    db_pass = os.getenv("POSTGRES_PASSWORD")
-    db_host = "db"
-    db_port = 5432
-    conn = psycopg2.connect(
-        dbname=db_name,
-        user=db_user,
-        password=db_pass,
-        host=db_host,
-        port=db_port,
-    )
-    cur = conn.cursor()
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username VARCHAR(255) UNIQUE NOT NULL,
-            password VARCHAR(255)
-        );
-        """
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
+# Initialize database with the new database module
+# Note: This will be called when the app starts, not during import
+def init_database():
+    """Initialize the database when the app starts."""
+    try:
+        initialize_database()
+        print("Database initialized successfully")
+    except Exception as e:
+        print(f"Warning: Could not initialize database: {e}")
 
 
-# Call init_db() immediately after loading envs
-init_db()
+# Call this when the app actually runs, not during import
+if __name__ == "__main__":
+    init_database()
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -71,6 +58,7 @@ def home():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """Handle user login and start game if credentials are valid."""
+    global game_state
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
@@ -78,7 +66,7 @@ def login():
         db_pass = os.getenv("POSTGRES_PASSWORD")
         if username == db_user and password == db_pass:
             session["username"] = username
-            game.start_game([username])
+            game_state = start_game([username])
             return redirect(url_for("play"))
         error_text = "Invalid username or password."
         return render_template("login.html", error=error_text)
@@ -97,21 +85,24 @@ def play():
     """Main game play route."""
     if "username" not in session:
         return redirect(url_for("login"))
-    if not game.started:
+    if not game_state or not game_state.get("started", False):
         return redirect(url_for("login"))
     message = ""
     if request.method == "POST":
         action = request.form.get("action")
         if action == "draw":
-            message = game.draw_card()
+            message = draw_card(game_state)
         elif action == "play":
             card_idx = int(request.form.get("card_idx"))
-            message = game.play_card(card_idx)
+            message = play_card(game_state, card_idx)
         elif action == "end_turn":
-            game.next_turn()
-    current_player = game.players[game.current_player_idx]
+            next_turn(game_state)
+    current_player = game_state["players"][game_state["current_player_idx"]]
     return render_template(
-        "play.html", game=game, current_player=current_player, message=message
+        "play.html",
+        game_state=game_state,
+        current_player=current_player,
+        message=message,
     )
 
 
@@ -119,56 +110,32 @@ def play():
 def admin():
     """Admin page for managing users."""
     message = ""
-    # Get DB credentials from environment
-    db_name = os.getenv("POSTGRES_DB", "monopoly")
-    db_user = os.getenv("POSTGRES_USER", "nihar")
-    db_pass = os.getenv("POSTGRES_PASSWORD")
-    db_host = "db"
-    db_port = 5432
 
-    # Connect to DB to fetch users
-    conn = psycopg2.connect(
-        dbname=db_name,
-        user=db_user,
-        password=db_pass,
-        host=db_host,
-        port=db_port,
-    )
-    cur = conn.cursor()
-    cur.execute("SELECT username FROM users;")
-    db_users = set(row[0] for row in cur.fetchall())
+    # Get existing users using the database module
+    db_users = set(get_usernames())
+
     if request.method == "POST":
         new_user = request.form.get("new_username")
         new_password = request.form.get("new_password")
         if new_user:
-            if new_user in db_users:
+            if user_exists(new_user):
                 message = "User already exists."
             else:
-                cur.execute(
-                    "INSERT INTO users (username, password) VALUES (%s, %s);",
-                    (new_user, new_password or ""),
-                )
-                conn.commit()
-                message = f"User '{new_user}' created."
-                db_users.add(new_user)
-    cur.close()
-    conn.close()
+                try:
+                    create_user(new_user, new_password or "")
+                    message = f"User '{new_user}' created."
+                    db_users.add(new_user)
+                except Exception as e:
+                    message = f"Error creating user: {str(e)}"
+
     return render_template("admin.html", users=db_users, message=message)
 
 
 @app.route("/database")
 def database():
     """Show all users in the database."""
-    conn = psycopg2.connect(
-        dbname="monopoly",
-        user="nihar",
-        password=os.getenv("POSTGRES_PASSWORD"),
-        host="db",
-        port=5432,
-    )
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM users;")
-    users_data = cur.fetchall()
-    cur.close()
-    conn.close()
-    return render_template("database.html", users_data=users_data)
+    try:
+        users_data = get_all_users()
+        return render_template("database.html", users_data=users_data)
+    except Exception as e:
+        return render_template("database.html", users_data=[], error=str(e))

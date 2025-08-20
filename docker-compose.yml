@@ -5,33 +5,73 @@ x-environment: &environment
   POSTGRES_DB: ${POSTGRES_DB}
   PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
   PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+
+networks:
+  monopoly_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
 services:
+  database_service:
+    build:
+      context: .
+      dockerfile: Dockerfile.database
+    container_name: monopoly_database_service
+    networks:
+      monopoly_network:
+        ipv4_address: 172.20.0.10
+    environment:
+      <<: *environment
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+    working_dir: /app
+
   web:
     build: .
+    container_name: monopoly_web
     ports:
       - "5000:5000"
+    networks:
+      monopoly_network:
+        ipv4_address: 172.20.0.11
     environment:
       FLASK_APP: app.py
       FLASK_RUN_HOST: 0.0.0.0
       FLASK_DEBUG: 1
+      <<: *environment
     volumes:
       - .:/app
+    depends_on:
+      - db
+      - database_service
 
   db:
     image: postgres:16
+    container_name: monopoly_postgres
     environment:
       <<: *environment
     ports:
       - "5432:5432"
+    networks:
+      monopoly_network:
+        ipv4_address: 172.20.0.12
     volumes:
       - pgdata:/var/lib/postgresql/data
 
   pgadmin:
     image: dpage/pgadmin4:9.6
+    container_name: monopoly_pgadmin
     environment:
       <<: *environment
     ports:
       - "5050:80"
+    networks:
+      monopoly_network:
+        ipv4_address: 172.20.0.13
     depends_on:
       - db
     volumes:
