@@ -49,7 +49,7 @@ docker compose down --remove-orphans --volumes
 
 Then start the application:
 ```bash
-docker compose up
+docker compose up --build
 ```
 
 **Service Access Points:**

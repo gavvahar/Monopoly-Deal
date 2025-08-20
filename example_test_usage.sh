@@ -11,7 +11,7 @@ echo "   docker compose --profile test run --rm test"
 
 echo ""
 echo "2. Run tests with database support:"
-echo "   docker compose up -d db"
+echo "   docker compose up --build -d db"
 echo "   docker compose --profile test run --rm test"
 echo "   docker compose down"
 

@@ -29,7 +29,7 @@ docker compose --profile test run --rm test
 Run tests with database support:
 ```bash
 # Start PostgreSQL first
-docker compose up -d db
+docker compose up --build -d db
 
 # Run tests (database tests will pass)
 docker compose --profile test run --rm test
@@ -111,6 +111,6 @@ If ports are already in use:
 
 ### Database Connection Issues
 Database tests failing is normal without PostgreSQL running:
-- Start database: `docker compose up -d db`
+- Start database: `docker compose up --build -d db`
 - Wait a few seconds for PostgreSQL to initialize
 - Run tests again
