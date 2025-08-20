@@ -84,7 +84,80 @@ templates = Jinja2Templates(directory="templates")
 # Global game state (same as Flask version)
 game_state = None
 users = set()
+# Session management for multiplayer games
+game_sessions = {}  # session_code -> game_state
 initialize()
+
+
+# Session management functions
+def generate_session_code():
+    """Generate a unique 6-character session code."""
+    import string
+    import random
+
+    while True:
+        code = "".join(random.choices(string.ascii_uppercase + string.digits, k=6))
+        if code not in game_sessions:
+            return code
+
+
+def create_game_session(creator_username):
+    """Create a new game session and return the session code."""
+    session_code = generate_session_code()
+    game_sessions[session_code] = {
+        "players": [creator_username],
+        "game_state": None,
+        "started": False,
+        "max_players": 5,
+    }
+    return session_code
+
+
+def join_game_session(session_code, username):
+    """Add a player to an existing game session. Returns True if successful."""
+    if session_code not in game_sessions:
+        return False, "Session not found"
+
+    session = game_sessions[session_code]
+
+    if session["started"]:
+        return False, "Game already started"
+
+    if len(session["players"]) >= session["max_players"]:
+        return False, "Game is full (max 5 players)"
+
+    if username in session["players"]:
+        return False, "You are already in this game"
+
+    session["players"].append(username)
+    return True, "Successfully joined game"
+
+
+def start_game_session(session_code):
+    """Start the game for a specific session."""
+    if session_code not in game_sessions:
+        return False, "Session not found"
+
+    session = game_sessions[session_code]
+
+    if session["started"]:
+        return False, "Game already started"
+
+    if len(session["players"]) < 1:
+        return False, "Need at least 1 player to start"
+
+    # Start the game with all players in the session
+    session["game_state"] = start_game(session["players"])
+    session["started"] = True
+    return True, "Game started successfully"
+
+
+def get_session_for_user(username):
+    """Find the session that contains the given username."""
+    for session_code, session in game_sessions.items():
+        if username in session["players"]:
+            return session_code, session
+    return None, None
 
 
 # Helper function to check if user is logged in
@@ -113,16 +186,13 @@ async def login_post(
     username: str = Form(...),
     password: str = Form(...),
 ):
-    """Handle user login and start game if credentials are valid."""
-    global game_state
-
+    """Handle user login and redirect to lobby."""
     db_user = os.getenv("POSTGRES_USER", "nihar")
     db_pass = os.getenv("POSTGRES_PASSWORD")
 
     if username == db_user and password == db_pass:
         request.session["username"] = username
-        game_state = start_game([username])
-        return RedirectResponse(url="/play", status_code=303)
+        return RedirectResponse(url="/lobby", status_code=303)
 
     error_text = "Invalid username or password."
     return templates.TemplateResponse(
@@ -137,43 +207,160 @@ async def logout(request: Request):
     return RedirectResponse(url="/login", status_code=303)
 
 
-@app.get("/play", response_class=HTMLResponse)
-async def play_get(request: Request):
-    """Handle GET request for play page."""
+@app.get("/lobby", response_class=HTMLResponse)
+async def lobby_get(request: Request):
+    """Handle GET request for lobby page."""
     username = get_current_user(request)
     if not username:
         return RedirectResponse(url="/login", status_code=303)
 
-    if not game_state or not game_state.get("started", False):
+    # Check if user is already in a session
+    session_code, session = get_session_for_user(username)
+
+    return templates.TemplateResponse(
+        "lobby.html",
+        {
+            "request": request,
+            "username": username,
+            "current_session": session_code,
+            "current_session_data": session,
+            "message": "",
+        },
+    )
+
+
+@app.post("/lobby")
+async def lobby_post(
+    request: Request,
+    action: str = Form(...),
+    session_code: str = Form(None),
+):
+    """Handle POST request for lobby actions."""
+    username = get_current_user(request)
+    if not username:
         return RedirectResponse(url="/login", status_code=303)
 
+    message = ""
+    current_session_code, current_session = get_session_for_user(username)
+
+    if action == "create_game":
+        if current_session_code:
+            message = "You are already in a game session"
+        else:
+            create_game_session(username)
+            return RedirectResponse(url="/lobby", status_code=303)
+
+    elif action == "join_game":
+        if current_session_code:
+            message = "You are already in a game session"
+        elif not session_code:
+            message = "Please enter a session code"
+        else:
+            success, msg = join_game_session(session_code.upper(), username)
+            message = msg
+            if success:
+                current_session_code = session_code.upper()
+                current_session = game_sessions[current_session_code]
+
+    elif action == "start_game":
+        if not current_session_code:
+            message = "You are not in any game session"
+        else:
+            success, msg = start_game_session(current_session_code)
+            if success:
+                return RedirectResponse(
+                    url=f"/play/{current_session_code}", status_code=303
+                )
+            else:
+                message = msg
+
+    elif action == "leave_game":
+        if current_session_code:
+            session = game_sessions[current_session_code]
+            if username in session["players"]:
+                session["players"].remove(username)
+                # Clean up empty sessions
+                if not session["players"]:
+                    del game_sessions[current_session_code]
+                current_session_code = None
+                current_session = None
+                message = "Left the game session"
+        else:
+            message = "You are not in any game session"
+
+    return templates.TemplateResponse(
+        "lobby.html",
+        {
+            "request": request,
+            "username": username,
+            "current_session": current_session_code,
+            "current_session_data": current_session,
+            "message": message,
+        },
+    )
+
+
+@app.get("/play/{session_code}", response_class=HTMLResponse)
+async def play_get(request: Request, session_code: str):
+    """Handle GET request for play page with session code."""
+    username = get_current_user(request)
+    if not username:
+        return RedirectResponse(url="/login", status_code=303)
+
+    session_code = session_code.upper()
+    if session_code not in game_sessions:
+        return RedirectResponse(url="/lobby", status_code=303)
+
+    session = game_sessions[session_code]
+
+    if username not in session["players"]:
+        return RedirectResponse(url="/lobby", status_code=303)
+
+    if not session["started"] or not session["game_state"]:
+        return RedirectResponse(url="/lobby", status_code=303)
+
+    game_state = session["game_state"]
     current_player = game_state["players"][game_state["current_player_idx"]]
+
     return templates.TemplateResponse(
         "play.html",
         {
             "request": request,
             "game_state": game_state,
             "current_player": current_player,
+            "session_code": session_code,
             "message": "",
         },
     )
 
 
-@app.post("/play")
+@app.post("/play/{session_code}")
 async def play_post(
     request: Request,
+    session_code: str,
     action: str = Form(...),
     card_idx: int = Form(None),
 ):
-    """Handle POST request for game actions."""
+    """Handle POST request for game actions with session code."""
     username = get_current_user(request)
     if not username:
         return RedirectResponse(url="/login", status_code=303)
 
-    if not game_state or not game_state.get("started", False):
-        return RedirectResponse(url="/login", status_code=303)
+    session_code = session_code.upper()
+    if session_code not in game_sessions:
+        return RedirectResponse(url="/lobby", status_code=303)
 
+    session = game_sessions[session_code]
+
+    if username not in session["players"]:
+        return RedirectResponse(url="/lobby", status_code=303)
+
+    if not session["started"] or not session["game_state"]:
+        return RedirectResponse(url="/lobby", status_code=303)
+
+    game_state = session["game_state"]
     message = ""
+
     if action == "draw":
         message = draw_card(game_state)
     elif action == "play":
@@ -189,9 +376,23 @@ async def play_post(
             "request": request,
             "game_state": game_state,
             "current_player": current_player,
+            "session_code": session_code,
             "message": message,
         },
     )
+
+
+# Fallback route for old /play endpoint (redirect to lobby)
+@app.get("/play", response_class=HTMLResponse)
+async def play_fallback_get(request: Request):
+    """Fallback for old /play route - redirect to lobby."""
+    return RedirectResponse(url="/lobby", status_code=303)
+
+
+@app.post("/play")
+async def play_fallback_post(request: Request):
+    """Fallback for old /play POST route - redirect to lobby."""
+    return RedirectResponse(url="/lobby", status_code=303)
 
 
 @app.get("/admin", response_class=HTMLResponse)

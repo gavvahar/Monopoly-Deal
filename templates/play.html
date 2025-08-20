@@ -30,7 +30,7 @@
             name="action"
             value="play"
             type="submit"
-            formaction="/play"
+            formaction="/play/{{ session_code }}"
             class="card-button"
           >
             Play
@@ -42,7 +42,7 @@
       <p>No cards in hand</p>
       {% endif %}
     </div>
-    <form method="post">
+    <form method="post" action="/play/{{ session_code }}">
       <button name="action" value="draw" type="submit">Draw Card</button>
       <button name="action" value="end_turn" type="submit">End Turn</button>
     </form>

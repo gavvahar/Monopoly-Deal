@@ -1,0 +1,101 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Game Lobby - Monopoly Deal</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <a href="/logout" class="admin-btn">Logout</a>
+    <div class="center-container">
+      <h1 class="game-title">Monopoly Deal - Game Lobby</h1>
+      <div class="lobby-box">
+        <h2>Welcome, {{ username }}!</h2>
+        
+        {% if message %}
+        <div class="message {{ 'success' if 'success' in message.lower() or 'joined' in message.lower() else 'error' }}">
+          {{ message }}
+        </div>
+        {% endif %}
+
+        {% if current_session %}
+        <!-- User is in a session -->
+        <div class="current-session">
+          <h3>Current Game Session</h3>
+          <div class="session-info">
+            <p><strong>Session Code:</strong> <span class="session-code">{{ current_session }}</span></p>
+            <p><strong>Players:</strong> {{ current_session_data.players|length }}/{{ current_session_data.max_players }}</p>
+            <div class="players-list">
+              {% for player in current_session_data.players %}
+                <span class="player-tag">{{ player }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          
+          <div class="session-actions">
+            {% if not current_session_data.started %}
+              <form method="post" class="inline-form">
+                <button name="action" value="start_game" type="submit" class="btn-primary">
+                  Start Game
+                </button>
+              </form>
+            {% else %}
+              <a href="/play/{{ current_session }}" class="btn-primary">Continue Game</a>
+            {% endif %}
+            
+            <form method="post" class="inline-form">
+              <button name="action" value="leave_game" type="submit" class="btn-danger">
+                Leave Game
+              </button>
+            </form>
+          </div>
+        </div>
+        {% else %}
+        <!-- User is not in any session -->
+        <div class="lobby-actions">
+          <div class="action-section">
+            <h3>Start New Game</h3>
+            <p>Create a new game session and invite others to join</p>
+            <form method="post">
+              <button name="action" value="create_game" type="submit" class="btn-primary">
+                Create New Game
+              </button>
+            </form>
+          </div>
+          
+          <div class="action-section">
+            <h3>Join Existing Game</h3>
+            <p>Enter a session code to join an existing game</p>
+            <form method="post">
+              <div class="form-group">
+                <label for="session_code">Session Code:</label>
+                <input 
+                  type="text" 
+                  id="session_code" 
+                  name="session_code" 
+                  placeholder="Enter 6-character code"
+                  maxlength="6"
+                  style="text-transform: uppercase;"
+                  required 
+                />
+              </div>
+              <button name="action" value="join_game" type="submit" class="btn-primary">
+                Join Game
+              </button>
+            </form>
+          </div>
+        </div>
+        {% endif %}
+        
+        <div class="lobby-info">
+          <h4>Game Rules:</h4>
+          <ul>
+            <li>Maximum 5 players per game</li>
+            <li>All players must join before the game starts</li>
+            <li>Share the session code with friends to invite them</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <script src="/static/theme.js"></script>
+  </body>
+</html>
