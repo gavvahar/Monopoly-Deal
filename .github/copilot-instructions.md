@@ -77,7 +77,7 @@ docker compose down --remove-orphans --volumes
 
 Start full stack:
 ```bash
-docker compose up
+docker compose up --build
 ```
 
 **Common Issue**: Docker builds may fail with SSL/network errors in sandboxed environments. In this case, use the local development server instead.

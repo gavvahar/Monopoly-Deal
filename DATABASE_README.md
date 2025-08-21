@@ -131,7 +131,7 @@ The module includes Docker support with separate containers:
 
 ```bash
 # Start all services including separate database service
-docker-compose up
+docker-compose up --build
 
 # Access services by IP:
 # - Web App: http://172.20.0.11:5000
