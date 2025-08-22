@@ -795,7 +795,8 @@ input[type="password"] {
     white-space: nowrap;
   }
 
-  th, td {
+  th,
+  td {
     padding: 0.4em 0.6em;
   }
 }
