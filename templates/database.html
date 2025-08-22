@@ -1,11 +1,20 @@
 <!doctype html>
 <html>
   <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Database View</title>
     <link rel="stylesheet" href="/static/style.css" />
   </head>
   <body>
-    <a href="/" class="home-btn">Home</a>
+    <div class="mobile-header">
+      <a href="/" class="home-btn">Home</a>
+      <select id="theme-toggle" class="theme-toggle" aria-label="Select theme" title="Switch between light, dark, and system themes">
+        <option value="light">☀️ Light</option>
+        <option value="dark">🌙 Dark</option>
+        <option value="system">🔧 System</option>
+      </select>
+    </div>
     <div class="center-container">
       <h1 class="game-title">Database: Users Table</h1>
       <div class="login-box">
