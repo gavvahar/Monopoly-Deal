@@ -68,16 +68,23 @@ class ThemeManager {
 
   createThemeToggle() {
     // Check if toggle already exists
-    if (document.getElementById("theme-toggle")) {
+    const toggle = document.getElementById("theme-toggle");
+    if (toggle) {
+      // Set up event listener for existing toggle
+      toggle.addEventListener("change", (e) => {
+        this.applyTheme(e.target.value);
+        this.updateToggleDropdown();
+      });
       this.updateToggleDropdown();
       return;
     }
 
-    const toggle = document.createElement("select");
-    toggle.id = "theme-toggle";
-    toggle.className = "theme-toggle";
-    toggle.setAttribute("aria-label", "Select theme");
-    toggle.setAttribute(
+    // Create new toggle if not found (fallback)
+    const newToggle = document.createElement("select");
+    newToggle.id = "theme-toggle";
+    newToggle.className = "theme-toggle";
+    newToggle.setAttribute("aria-label", "Select theme");
+    newToggle.setAttribute(
       "title",
       "Switch between light, dark, and system themes",
     );
@@ -87,16 +94,16 @@ class ThemeManager {
       const option = document.createElement("option");
       option.value = theme;
       option.textContent = THEME_LABELS[theme];
-      toggle.appendChild(option);
+      newToggle.appendChild(option);
     });
 
-    toggle.addEventListener("change", (e) => {
+    newToggle.addEventListener("change", (e) => {
       this.applyTheme(e.target.value);
       this.updateToggleDropdown();
     });
 
     // Insert the toggle dropdown into the page
-    document.body.appendChild(toggle);
+    document.body.appendChild(newToggle);
 
     this.updateToggleDropdown();
   }
