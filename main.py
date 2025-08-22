@@ -19,6 +19,8 @@ from database import (
     user_exists,
     create_user,
     get_all_users,
+    create_admin_user,
+    admin_exists,
 )
 
 
@@ -26,8 +28,14 @@ def initialize():
     """
     Load environment variables and return the directory path
     of the current file.
+    Also ensures admin credentials are present in the admin table.
     """
     load_dotenv(path.join(path.dirname(__file__), "./.envs/nihar.env"))
+    # Insert admin creds into admin table if not present
+    admin_user = os.getenv("ADMIN_USER")
+    admin_pass = os.getenv("ADMIN_PASSWORD")
+    if admin_user and admin_pass and not admin_exists(admin_user):
+        create_admin_user(admin_user, admin_pass)
     return path.dirname(path.realpath(__file__))
 
 
@@ -168,6 +176,11 @@ def get_current_user(request: Request):
     return username
 
 
+# Helper function to check if admin is logged in
+def get_current_admin(request: Request):
+    return request.session.get("admin_username")
+
+
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     """Route for home page, redirects to login."""
@@ -205,6 +218,37 @@ async def logout(request: Request):
     """Log out the current user."""
     request.session.pop("username", None)
     return RedirectResponse(url="/login", status_code=303)
+
+
+@app.get("/admin-login", response_class=HTMLResponse)
+async def admin_login_get(request: Request):
+    """Admin login page."""
+    return templates.TemplateResponse("admin_login.html", {"request": request})
+
+
+@app.post("/admin-login")
+async def admin_login_post(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+):
+    """Handle admin login using credentials from .env."""
+    admin_user = os.getenv("ADMIN_USER")
+    admin_pass = os.getenv("ADMIN_PASSWORD")
+    if username == admin_user and password == admin_pass:
+        request.session["admin_username"] = username
+        return RedirectResponse(url="/admin", status_code=303)
+    error_text = "Invalid admin username or password."
+    return templates.TemplateResponse(
+        "admin_login.html", {"request": request, "error": error_text}
+    )
+
+
+@app.get("/admin-logout")
+async def admin_logout(request: Request):
+    """Log out the current admin."""
+    request.session.pop("admin_username", None)
+    return RedirectResponse(url="/admin-login", status_code=303)
 
 
 @app.get("/lobby", response_class=HTMLResponse)
@@ -398,13 +442,13 @@ async def play_fallback_post(request: Request):
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_get(request: Request):
     """Handle GET request for admin page."""
+    if not get_current_admin(request):
+        return RedirectResponse(url="/admin-login", status_code=303)
     try:
-        # Get existing users using the database module
         db_users = set(get_usernames())
     except Exception as e:
         print(f"Database error in admin_get: {e}")
         db_users = set()
-
     return templates.TemplateResponse(
         "admin.html", {"request": request, "users": db_users, "message": ""}
     )
@@ -417,12 +461,11 @@ async def admin_post(
     new_password: str = Form(""),
 ):
     """Handle POST request for admin page."""
+    if not get_current_admin(request):
+        return RedirectResponse(url="/admin-login", status_code=303)
     message = ""
-
     try:
-        # Get existing users using the database module
         db_users = set(get_usernames())
-
         if new_username:
             if user_exists(new_username):
                 message = "User already exists."
@@ -437,7 +480,6 @@ async def admin_post(
         print(f"Database error in admin_post: {e}")
         db_users = set()
         message = "Database connection error. Cannot manage users at this time."
-
     return templates.TemplateResponse(
         "admin.html", {"request": request, "users": db_users, "message": message}
     )
