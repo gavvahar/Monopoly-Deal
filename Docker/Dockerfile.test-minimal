@@ -1,0 +1,28 @@
+# Minimal test container that extends the existing web container
+FROM monopoly_deal_app-web:latest
+
+# Install Node.js for Prettier (if network allows)
+RUN apt-get update && apt-get install -y \
+    curl \
+    || echo "Network access limited - skipping Node.js installation"
+
+# Try to install Node.js if curl is available
+RUN if command -v curl >/dev/null 2>&1; then \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs || echo "Node.js installation failed"; \
+    fi
+
+# Try to install Prettier globally (if npm is available)
+RUN if command -v npm >/dev/null 2>&1; then \
+    npm install --global prettier || echo "Prettier installation failed"; \
+    fi
+
+# Copy test script and make executable
+COPY run_tests.sh .
+RUN chmod +x run_tests.sh
+
+# Set working directory
+WORKDIR /app
+
+# Default command runs all tests
+CMD ["./run_tests.sh"]
