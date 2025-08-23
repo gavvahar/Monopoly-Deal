@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Service Unavailable - Monopoly Deal</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <div class="center-container">
+      <h1 class="game-title">Monopoly Deal</h1>
+      <div class="login-box">
+        <h2>Service Temporarily Unavailable</h2>
+        <div class="business-hours-message">
+          <p>
+            <strong>This service is restricted during business hours (9:00 AM - 5:00 PM EST).</strong>
+          </p>
+          <p>
+            Please try again outside of business hours to access the Monopoly Deal game.
+          </p>
+          <p>
+            Current time: <span id="current-time">{{ current_time }}</span>
+          </p>
+        </div>
+        <div class="retry-info">
+          <p>
+            <small>
+              The service will be available again after 5:00 PM EST or before 9:00 AM EST.
+            </small>
+          </p>
+        </div>
+      </div>
+    </div>
+    <script src="/static/theme.js"></script>
+  </body>
+</html>

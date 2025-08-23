@@ -6,6 +6,8 @@ Handles user login, game play, and admin/database operations.
 import os
 from os import path
 from contextlib import asynccontextmanager
+from datetime import datetime
+import pytz
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -37,6 +39,20 @@ def initialize():
     if admin_user and admin_pass and not admin_exists(admin_user):
         create_admin_user(admin_user, admin_pass)
     return path.dirname(path.realpath(__file__))
+
+
+def is_business_hours():
+    """
+    Check if the current time is within business hours (9 AM - 5 PM EST).
+    Returns True if within business hours, False otherwise.
+    """
+    # Get current time in EST
+    est = pytz.timezone("US/Eastern")
+    current_time = datetime.now(est)
+
+    # Check if it's between 9 AM and 5 PM EST
+    hour = current_time.hour
+    return 9 <= hour < 17  # 9 AM to 4:59 PM (5 PM exclusive)
 
 
 # Initialize database when the app starts
@@ -181,15 +197,41 @@ def get_current_admin(request: Request):
     return request.session.get("admin_username")
 
 
+def check_business_hours_restriction(request: Request):
+    """
+    Check if the current time is within business hours and return response.
+    Returns None if access allowed, or HTMLResponse with restriction if blocked.
+    """
+    if is_business_hours():
+        # Get current time in EST for display
+        est = pytz.timezone("US/Eastern")
+        current_time = datetime.now(est).strftime("%I:%M %p EST")
+
+        return templates.TemplateResponse(
+            "business_hours.html", {"request": request, "current_time": current_time}
+        )
+    return None
+
+
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     """Route for home page, redirects to login."""
+    # Check business hours restriction
+    restriction_response = check_business_hours_restriction(request)
+    if restriction_response:
+        return restriction_response
+
     return await login_get(request)
 
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_get(request: Request):
     """Handle GET request for login page."""
+    # Check business hours restriction
+    restriction_response = check_business_hours_restriction(request)
+    if restriction_response:
+        return restriction_response
+
     return templates.TemplateResponse("login.html", {"request": request})
 
 
@@ -200,6 +242,11 @@ async def login_post(
     password: str = Form(...),
 ):
     """Handle user login and redirect to lobby."""
+    # Check business hours restriction
+    restriction_response = check_business_hours_restriction(request)
+    if restriction_response:
+        return restriction_response
+
     db_user = os.getenv("POSTGRES_USER", "nihar")
     db_pass = os.getenv("POSTGRES_PASSWORD")
 
@@ -254,6 +301,11 @@ async def admin_logout(request: Request):
 @app.get("/lobby", response_class=HTMLResponse)
 async def lobby_get(request: Request):
     """Handle GET request for lobby page."""
+    # Check business hours restriction
+    restriction_response = check_business_hours_restriction(request)
+    if restriction_response:
+        return restriction_response
+
     username = get_current_user(request)
     if not username:
         return RedirectResponse(url="/login", status_code=303)
@@ -280,6 +332,11 @@ async def lobby_post(
     session_code: str = Form(None),
 ):
     """Handle POST request for lobby actions."""
+    # Check business hours restriction
+    restriction_response = check_business_hours_restriction(request)
+    if restriction_response:
+        return restriction_response
+
     username = get_current_user(request)
     if not username:
         return RedirectResponse(url="/login", status_code=303)
@@ -347,6 +404,11 @@ async def lobby_post(
 @app.get("/play/{session_code}", response_class=HTMLResponse)
 async def play_get(request: Request, session_code: str):
     """Handle GET request for play page with session code."""
+    # Check business hours restriction
+    restriction_response = check_business_hours_restriction(request)
+    if restriction_response:
+        return restriction_response
+
     username = get_current_user(request)
     if not username:
         return RedirectResponse(url="/login", status_code=303)
@@ -386,6 +448,11 @@ async def play_post(
     card_idx: int = Form(None),
 ):
     """Handle POST request for game actions with session code."""
+    # Check business hours restriction
+    restriction_response = check_business_hours_restriction(request)
+    if restriction_response:
+        return restriction_response
+
     username = get_current_user(request)
     if not username:
         return RedirectResponse(url="/login", status_code=303)
@@ -430,12 +497,22 @@ async def play_post(
 @app.get("/play", response_class=HTMLResponse)
 async def play_fallback_get(request: Request):
     """Fallback for old /play route - redirect to lobby."""
+    # Check business hours restriction
+    restriction_response = check_business_hours_restriction(request)
+    if restriction_response:
+        return restriction_response
+
     return RedirectResponse(url="/lobby", status_code=303)
 
 
 @app.post("/play")
 async def play_fallback_post(request: Request):
     """Fallback for old /play POST route - redirect to lobby."""
+    # Check business hours restriction
+    restriction_response = check_business_hours_restriction(request)
+    if restriction_response:
+        return restriction_response
+
     return RedirectResponse(url="/lobby", status_code=303)
 
 
