@@ -18,7 +18,7 @@ services:
   test:
     build:
       context: .
-      dockerfile: Dockerfile.test
+      dockerfile: Docker/Dockerfile.test
     pull_policy: build
     container_name: monopoly_test
     volumes:
@@ -28,7 +28,7 @@ services:
   test-minimal:
     build:
       context: .
-      dockerfile: Dockerfile.test-minimal
+      dockerfile: Docker/Dockerfile.test-minimal
     pull_policy: build
     container_name: monopoly_test_minimal
     volumes:
@@ -40,7 +40,7 @@ services:
   database_service:
     build:
       context: .
-      dockerfile: Dockerfile.database
+      dockerfile: Docker/Dockerfile.database
     pull_policy: build
     container_name: monopoly_database_service
     networks:
@@ -55,7 +55,9 @@ services:
     working_dir: /app
 
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Docker/Dockerfile
     pull_policy: build
     container_name: monopoly_web
     ports:

@@ -1,10 +1,27 @@
 <!doctype html>
 <html>
   <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login - Monopoly Deal</title>
     <link rel="stylesheet" href="/static/style.css" />
   </head>
   <body>
+    <!-- Mobile header for mobile screens -->
+    <div class="mobile-header">
+      <a href="/admin" class="admin-btn">Admin</a>
+      <select
+        id="theme-toggle"
+        class="theme-toggle"
+        aria-label="Select theme"
+        title="Switch between light, dark, and system themes"
+      >
+        <option value="light">☀️ Light</option>
+        <option value="dark">🌙 Dark</option>
+        <option value="system">🔧 System</option>
+      </select>
+    </div>
+    <!-- Original desktop positioned buttons -->
     <a href="/admin" class="admin-btn">Admin</a>
     <div class="center-container">
       <h1 class="game-title">Monopoly Deal</h1>
