@@ -11,7 +11,7 @@
         <h2>Service Temporarily Unavailable</h2>
         <div class="business-hours-message">
           <p>
-            <strong>This service is restricted during business hours (9:00 AM - 5:00 PM EST).</strong>
+            <strong>This service is restricted during business hours (9:00 AM - 5:00 PM EST, Monday-Friday).</strong>
           </p>
           <p>
             Please try again outside of business hours to access the Monopoly Deal game.
@@ -23,9 +23,35 @@
         <div class="retry-info">
           <p>
             <small>
-              The service will be available again after 5:00 PM EST or before 9:00 AM EST.
+              The service will be available again after 5:00 PM EST, before 9:00 AM EST, or during weekends.
             </small>
           </p>
+        </div>
+        
+        <!-- Admin Bypass Form -->
+        <div class="admin-bypass-section" style="margin-top: 20px; border-top: 1px solid #ddd; padding-top: 20px;">
+          <h3>Admin Access</h3>
+          {% if error %}
+          <div class="error-message" style="color: red; margin-bottom: 10px;">
+            {{ error }}
+          </div>
+          {% endif %}
+          <form method="post" action="/admin-bypass">
+            <input type="hidden" name="redirect_url" value="{{ request.url.path }}" />
+            <div class="form-group">
+              <label for="admin_password">Admin Password:</label>
+              <input 
+                type="password" 
+                id="admin_password" 
+                name="admin_password" 
+                required 
+                style="width: 100%; padding: 8px; margin: 5px 0;"
+              />
+            </div>
+            <button type="submit" class="btn" style="width: 100%; padding: 10px;">
+              Bypass Restriction
+            </button>
+          </form>
         </div>
       </div>
     </div>

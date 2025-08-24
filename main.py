@@ -43,14 +43,20 @@ def initialize():
 
 def is_business_hours():
     """
-    Check if the current time is within business hours (9 AM - 5 PM EST).
+    Check if the current time is within business hours (9 AM - 5 PM EST, Monday-Friday).
     Returns True if within business hours, False otherwise.
     """
     # Get current time in EST
     est = pytz.timezone("US/Eastern")
     current_time = datetime.now(est)
 
-    # Check if it's between 9 AM and 5 PM EST
+    # Check if it's a weekday (Monday=0 to Friday=4)
+    # Saturday=5, Sunday=6 should always be available
+    weekday = current_time.weekday()
+    if weekday >= 5:  # Weekend (Saturday=5, Sunday=6)
+        return False
+
+    # Check if it's between 9 AM and 5 PM EST on weekdays
     hour = current_time.hour
     return 9 <= hour < 17  # 9 AM to 4:59 PM (5 PM exclusive)
 
@@ -201,7 +207,12 @@ def check_business_hours_restriction(request: Request):
     """
     Check if the current time is within business hours and return response.
     Returns None if access allowed, or HTMLResponse with restriction if blocked.
+    Admin bypass is checked via session.
     """
+    # Check if admin bypass is active in session
+    if request.session.get("admin_bypass"):
+        return None
+
     if is_business_hours():
         # Get current time in EST for display
         est = pytz.timezone("US/Eastern")
@@ -265,6 +276,34 @@ async def logout(request: Request):
     """Log out the current user."""
     request.session.pop("username", None)
     return RedirectResponse(url="/login", status_code=303)
+
+
+@app.post("/admin-bypass")
+async def admin_bypass_post(
+    request: Request,
+    admin_password: str = Form(...),
+    redirect_url: str = Form("/"),
+):
+    """Handle admin bypass for business hours restriction."""
+    admin_pass = os.getenv("ADMIN_PASSWORD")
+
+    if admin_password == admin_pass:
+        # Set admin bypass flag in session
+        request.session["admin_bypass"] = True
+        return RedirectResponse(url=redirect_url, status_code=303)
+    else:
+        # Return to business hours page with error
+        est = pytz.timezone("US/Eastern")
+        current_time = datetime.now(est).strftime("%I:%M %p EST")
+
+        return templates.TemplateResponse(
+            "business_hours.html",
+            {
+                "request": request,
+                "current_time": current_time,
+                "error": "Invalid admin password.",
+            },
+        )
 
 
 @app.get("/admin-login", response_class=HTMLResponse)
