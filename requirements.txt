@@ -9,3 +9,5 @@ black
 flake8
 httpx
 pytz
+pyotp
+qrcode[pil]

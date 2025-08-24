@@ -8,6 +8,10 @@ from os import path
 from contextlib import asynccontextmanager
 from datetime import datetime
 import pytz
+import pyotp
+import qrcode
+import io
+import base64
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -59,6 +63,59 @@ def is_business_hours():
     # Check if it's between 9 AM and 5 PM EST on weekdays
     hour = current_time.hour
     return 9 <= hour < 17  # 9 AM to 4:59 PM (5 PM exclusive)
+
+
+def get_admin_totp_secret():
+    """Get or generate TOTP secret for admin account."""
+    totp_secret = os.getenv("ADMIN_TOTP_SECRET")
+    if not totp_secret:
+        # Generate a new secret if not found
+        totp_secret = pyotp.random_base32()
+        print(f"Generated new TOTP secret: {totp_secret}")
+        print("Please add ADMIN_TOTP_SECRET to your .env file")
+    return totp_secret
+
+
+def validate_admin_totp(totp_code):
+    """Validate TOTP code for admin account."""
+    if not totp_code or len(totp_code) != 6:
+        return False
+
+    totp_secret = get_admin_totp_secret()
+    totp = pyotp.TOTP(totp_secret)
+
+    try:
+        # Validate the TOTP code (allows 30 second window)
+        return totp.verify(totp_code, valid_window=1)
+    except Exception:
+        return False
+
+
+def generate_admin_qr_code():
+    """Generate QR code for admin TOTP setup."""
+    totp_secret = get_admin_totp_secret()
+    admin_user = os.getenv("ADMIN_USER", "admin")
+
+    # Create TOTP URI
+    totp = pyotp.TOTP(totp_secret)
+    provisioning_uri = totp.provisioning_uri(
+        name=admin_user, issuer_name="Monopoly Deal Admin"
+    )
+
+    # Generate QR code
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(provisioning_uri)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="black", back_color="white")
+
+    # Convert to base64 for display
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+    img_str = base64.b64encode(buffer.getvalue()).decode()
+
+    return f"data:image/png;base64,{img_str}"
 
 
 # Initialize database when the app starts
@@ -282,17 +339,14 @@ async def logout(request: Request):
 async def admin_bypass_post(
     request: Request,
     admin_password: str = Form(...),
+    totp_code: str = Form(...),
     redirect_url: str = Form("/"),
 ):
-    """Handle admin bypass for business hours restriction."""
+    """Handle admin bypass for business hours restriction with 2FA."""
     admin_pass = os.getenv("ADMIN_PASSWORD")
 
-    if admin_password == admin_pass:
-        # Set admin bypass flag in session
-        request.session["admin_bypass"] = True
-        return RedirectResponse(url=redirect_url, status_code=303)
-    else:
-        # Return to business hours page with error
+    # Check password first
+    if admin_password != admin_pass:
         est = pytz.timezone("US/Eastern")
         current_time = datetime.now(est).strftime("%I:%M %p EST")
 
@@ -304,6 +358,24 @@ async def admin_bypass_post(
                 "error": "Invalid admin password.",
             },
         )
+
+    # Check TOTP code
+    if not validate_admin_totp(totp_code):
+        est = pytz.timezone("US/Eastern")
+        current_time = datetime.now(est).strftime("%I:%M %p EST")
+
+        return templates.TemplateResponse(
+            "business_hours.html",
+            {
+                "request": request,
+                "current_time": current_time,
+                "error": "Invalid 2FA code. Please check your authenticator app.",
+            },
+        )
+
+    # Both password and TOTP are valid
+    request.session["admin_bypass"] = True
+    return RedirectResponse(url=redirect_url, status_code=303)
 
 
 @app.get("/admin-login", response_class=HTMLResponse)
@@ -327,6 +399,22 @@ async def admin_login_post(
     error_text = "Invalid admin username or password."
     return templates.TemplateResponse(
         "admin_login.html", {"request": request, "error": error_text}
+    )
+
+
+@app.get("/admin-2fa-setup", response_class=HTMLResponse)
+async def admin_2fa_setup(request: Request):
+    """Admin 2FA setup page."""
+    # Only show this if admin is logged in
+    if not get_current_admin(request):
+        return RedirectResponse(url="/admin-login", status_code=303)
+
+    qr_code = generate_admin_qr_code()
+    totp_secret = get_admin_totp_secret()
+
+    return templates.TemplateResponse(
+        "admin_2fa_setup.html",
+        {"request": request, "qr_code": qr_code, "totp_secret": totp_secret},
     )
 
 

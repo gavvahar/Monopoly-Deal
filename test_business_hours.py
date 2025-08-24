@@ -177,14 +177,20 @@ def test_admin_bypass():
         assert "Service Temporarily Unavailable" in response.text
         print("✓ Restriction active before bypass")
 
-        # Test admin bypass with correct password
-        response = client.post(
-            "/admin-bypass",
-            data={"admin_password": "test_admin_pass", "redirect_url": "/"},
-            follow_redirects=False,
-        )
-        assert response.status_code == 303  # Redirect after successful bypass
-        print("✓ Admin bypass successful")
+        # Test admin bypass with correct password and TOTP
+        with patch("main.validate_admin_totp") as mock_totp:
+            mock_totp.return_value = True  # Mock valid TOTP
+            response = client.post(
+                "/admin-bypass",
+                data={
+                    "admin_password": "test_admin_pass",
+                    "totp_code": "123456",
+                    "redirect_url": "/",
+                },
+                follow_redirects=False,
+            )
+            assert response.status_code == 303  # Redirect after successful bypass
+            print("✓ Admin bypass successful with valid 2FA")
 
         # Follow the redirect and test that bypass is active
         # Need to use the same client session for the bypass to persist
@@ -198,11 +204,31 @@ def test_admin_bypass():
         new_client = TestClient(app)  # New client without bypass session
         response = new_client.post(
             "/admin-bypass",
-            data={"admin_password": "wrong_password", "redirect_url": "/"},
+            data={
+                "admin_password": "wrong_password",
+                "totp_code": "123456",
+                "redirect_url": "/",
+            },
         )
         assert response.status_code == 200
         assert "Invalid admin password" in response.text
         print("✓ Invalid admin password rejected")
+
+        # Test admin bypass with correct password but invalid TOTP
+        new_client2 = TestClient(app)  # New client without bypass session
+        with patch("main.validate_admin_totp") as mock_totp:
+            mock_totp.return_value = False  # Mock invalid TOTP
+            response = new_client2.post(
+                "/admin-bypass",
+                data={
+                    "admin_password": "test_admin_pass",
+                    "totp_code": "000000",
+                    "redirect_url": "/",
+                },
+            )
+            assert response.status_code == 200
+            assert "Invalid 2FA code" in response.text
+            print("✓ Invalid 2FA code rejected")
 
 
 def test_current_time_display():
