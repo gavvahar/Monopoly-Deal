@@ -4,7 +4,11 @@ This document describes the business hours restriction feature implemented for t
 
 ## Overview
 
-The Monopoly Deal application is restricted during standard business hours (9:00 AM - 5:00 PM EST, Monday-Friday only) to prevent usage during work hours. Users attempting to access the application during this time will see a friendly message explaining the restriction, with an option for admin bypass.
+The Monopoly Deal application implements selective restrictions during standard business hours (9:00 AM - 5:00 PM EST, Monday-Friday only). The system distinguishes between hosting new game sessions and joining existing ones:
+
+- **Hosting/Creating Sessions**: Restricted during business hours (requires admin bypass)
+- **Joining Existing Sessions**: Allowed during business hours
+- **Weekend Access**: All actions available on weekends
 
 ## Implementation Details
 
@@ -15,38 +19,81 @@ The Monopoly Deal application is restricted during standard business hours (9:00
 - **Weekend Access**: Saturdays and Sundays are available all day
 - **Timezone**: Uses `US/Eastern` timezone with automatic DST handling
 
+### Action-Based Restrictions
+
+The system implements selective restrictions based on the type of action:
+
+#### Hosting Actions (Restricted during business hours)
+- **Login**: Required to create new sessions
+- **Creating Game Sessions**: Starting new multiplayer games  
+- **Starting Games**: Initiating gameplay for created sessions
+
+#### Joining Actions (Allowed during business hours)
+- **Joining Existing Sessions**: Participating in ongoing games
+- **Game Play**: Drawing cards, playing cards, taking turns
+- **Leaving Sessions**: Exiting from game sessions
+
 ### Protected Routes
-The following routes are protected by business hours restrictions:
-- `/` (Home page)
-- `/login` (GET and POST)
-- `/lobby` (GET and POST) 
-- `/play/*` (All game play routes)
+The following routes have selective business hours restrictions:
+
+#### Hosting Routes (Restricted during business hours)
+- `/` (Home page - redirects to login)
+- `/login` (GET and POST - needed for session creation)
+- `/lobby` (GET - shows create game options)
+- `/lobby` (POST with `action=create_game` or `action=start_game`)
+
+#### Joining Routes (Allowed during business hours)
+- `/lobby` (POST with `action=join_game` or `action=leave_game`)
+- `/play/{session_code}` (GET and POST - joining existing games)
 
 ### Admin Bypass
-Administrators can bypass the business hours restriction by:
-1. Entering the admin password on the restriction page
-2. Once bypassed, the session will remain active until logout
-3. The bypass uses the same admin password configured in environment variables
+
+Administrators can bypass the business hours restriction for hosting actions by:
+1. Using the admin bypass form on the restriction page
+2. Entering both the admin password and 6-digit 2FA code
+3. Once bypassed, the session remains active for all actions until logout
+
+The bypass uses Enhanced 2FA security with TOTP (Time-Based One-Time Password) authentication.
 
 ### User Experience
-When accessing the application during business hours, users will see:
-- Clear message about the restriction (Monday-Friday only)
-- Current EST time display
-- Information about when the service will be available again
-- Admin bypass form for authorized access
-- Consistent styling with the rest of the application
+
+**During business hours:**
+- **Hosting attempts**: Users see restriction page with clear messaging
+- **Joining attempts**: Users can join existing sessions normally
+- Clear distinction between "hosting" and "joining" in messaging
+- Current EST time display for awareness
+- Admin bypass form available for authorized hosting access
+
+**Outside business hours:**
+- All actions available normally
+- No restrictions on hosting or joining
+- Weekend access: All functionality available
 
 ## Technical Implementation
 
 ### Core Function
 ```python
-def is_business_hours():
+def check_business_hours_restriction(request: Request, action_type="host"):
     """
-    Check if the current time is within business hours (9 AM - 5 PM EST, Monday-Friday).
-    Returns True if within business hours, False otherwise.
+    Check if the current time is within business hours and return response.
+    
+    Args:
+        action_type: "host" for hosting/creating sessions (restricted), 
+                    "join" for joining existing sessions (allowed)
     """
-    est = pytz.timezone('US/Eastern')
-    current_time = datetime.now(est)
+    # Check if admin bypass is active in session
+    if request.session.get("admin_bypass"):
+        return None
+
+    # During business hours, only restrict hosting actions
+    if is_business_hours():
+        if action_type == "join":
+            # Allow joining existing sessions during business hours
+            return None
+            
+        # Restrict hosting/creating new sessions during business hours
+        # ... show restriction page
+```
     
     # Check if it's a weekday (Monday=0 to Friday=4)
     # Saturday=5, Sunday=6 should always be available
