@@ -345,6 +345,12 @@ async def logout(request: Request):
     return RedirectResponse(url="/login", status_code=303)
 
 
+@app.get("/admin-bypass")
+async def admin_bypass_get(request: Request):
+    """Redirect GET requests to admin-bypass to home page."""
+    return RedirectResponse(url="/", status_code=303)
+
+
 @app.post("/admin-bypass")
 async def admin_bypass_post(
     request: Request,
