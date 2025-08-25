@@ -260,17 +260,27 @@ def get_current_admin(request: Request):
     return request.session.get("admin_username")
 
 
-def check_business_hours_restriction(request: Request):
+def check_business_hours_restriction(request: Request, action_type="host"):
     """
     Check if the current time is within business hours and return response.
     Returns None if access allowed, or HTMLResponse with restriction if blocked.
     Admin bypass is checked via session.
+
+    Args:
+        action_type: "host" for hosting/creating sessions (restricted),
+                    "join" for joining existing sessions (allowed)
     """
     # Check if admin bypass is active in session
     if request.session.get("admin_bypass"):
         return None
 
+    # During business hours, only restrict hosting actions
     if is_business_hours():
+        if action_type == "join":
+            # Allow joining existing sessions during business hours
+            return None
+
+        # Restrict hosting/creating new sessions during business hours
         # Get current time in EST for display
         est = pytz.timezone("US/Eastern")
         current_time = datetime.now(est).strftime("%I:%M %p EST")
@@ -284,8 +294,8 @@ def check_business_hours_restriction(request: Request):
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     """Route for home page, redirects to login."""
-    # Check business hours restriction
-    restriction_response = check_business_hours_restriction(request)
+    # Check business hours restriction for hosting (login needed to create sessions)
+    restriction_response = check_business_hours_restriction(request, "host")
     if restriction_response:
         return restriction_response
 
@@ -295,8 +305,8 @@ async def home(request: Request):
 @app.get("/login", response_class=HTMLResponse)
 async def login_get(request: Request):
     """Handle GET request for login page."""
-    # Check business hours restriction
-    restriction_response = check_business_hours_restriction(request)
+    # Check business hours restriction for hosting (login needed to create sessions)
+    restriction_response = check_business_hours_restriction(request, "host")
     if restriction_response:
         return restriction_response
 
@@ -310,8 +320,8 @@ async def login_post(
     password: str = Form(...),
 ):
     """Handle user login and redirect to lobby."""
-    # Check business hours restriction
-    restriction_response = check_business_hours_restriction(request)
+    # Check business hours restriction for hosting (login needed to create sessions)
+    restriction_response = check_business_hours_restriction(request, "host")
     if restriction_response:
         return restriction_response
 
@@ -428,8 +438,8 @@ async def admin_logout(request: Request):
 @app.get("/lobby", response_class=HTMLResponse)
 async def lobby_get(request: Request):
     """Handle GET request for lobby page."""
-    # Check business hours restriction
-    restriction_response = check_business_hours_restriction(request)
+    # Check business hours restriction for hosting (lobby needed to create sessions)
+    restriction_response = check_business_hours_restriction(request, "host")
     if restriction_response:
         return restriction_response
 
@@ -459,14 +469,21 @@ async def lobby_post(
     session_code: str = Form(None),
 ):
     """Handle POST request for lobby actions."""
-    # Check business hours restriction
-    restriction_response = check_business_hours_restriction(request)
-    if restriction_response:
-        return restriction_response
-
     username = get_current_user(request)
     if not username:
         return RedirectResponse(url="/login", status_code=303)
+
+    # Apply business hours restrictions based on action type
+    if action in ["create_game", "start_game"]:
+        # These actions require hosting permissions - check for business hours
+        restriction_response = check_business_hours_restriction(request, "host")
+        if restriction_response:
+            return restriction_response
+    elif action in ["join_game", "leave_game"]:
+        # These actions are for joining existing sessions - allow during business hours
+        restriction_response = check_business_hours_restriction(request, "join")
+        if restriction_response:
+            return restriction_response
 
     message = ""
     current_session_code, current_session = get_session_for_user(username)
@@ -531,8 +548,8 @@ async def lobby_post(
 @app.get("/play/{session_code}", response_class=HTMLResponse)
 async def play_get(request: Request, session_code: str):
     """Handle GET request for play page with session code."""
-    # Check business hours restriction
-    restriction_response = check_business_hours_restriction(request)
+    # Allow joining existing game sessions during business hours
+    restriction_response = check_business_hours_restriction(request, "join")
     if restriction_response:
         return restriction_response
 
@@ -575,8 +592,8 @@ async def play_post(
     card_idx: int = Form(None),
 ):
     """Handle POST request for game actions with session code."""
-    # Check business hours restriction
-    restriction_response = check_business_hours_restriction(request)
+    # Allow playing in existing game sessions during business hours
+    restriction_response = check_business_hours_restriction(request, "join")
     if restriction_response:
         return restriction_response
 
@@ -624,8 +641,8 @@ async def play_post(
 @app.get("/play", response_class=HTMLResponse)
 async def play_fallback_get(request: Request):
     """Fallback for old /play route - redirect to lobby."""
-    # Check business hours restriction
-    restriction_response = check_business_hours_restriction(request)
+    # Check business hours restriction for hosting (fallback redirects to lobby)
+    restriction_response = check_business_hours_restriction(request, "host")
     if restriction_response:
         return restriction_response
 
@@ -635,8 +652,8 @@ async def play_fallback_get(request: Request):
 @app.post("/play")
 async def play_fallback_post(request: Request):
     """Fallback for old /play POST route - redirect to lobby."""
-    # Check business hours restriction
-    restriction_response = check_business_hours_restriction(request)
+    # Check business hours restriction for hosting (fallback redirects to lobby)
+    restriction_response = check_business_hours_restriction(request, "host")
     if restriction_response:
         return restriction_response
 
