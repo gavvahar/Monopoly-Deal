@@ -444,14 +444,15 @@ async def admin_logout(request: Request):
 @app.get("/lobby", response_class=HTMLResponse)
 async def lobby_get(request: Request):
     """Handle GET request for lobby page."""
+    # Check authentication first
+    username = get_current_user(request)
+    if not username:
+        return RedirectResponse(url="/login", status_code=303)
+
     # Check business hours restriction for hosting (lobby needed to create sessions)
     restriction_response = check_business_hours_restriction(request, "host")
     if restriction_response:
         return restriction_response
-
-    username = get_current_user(request)
-    if not username:
-        return RedirectResponse(url="/login", status_code=303)
 
     # Check if user is already in a session
     session_code, session = get_session_for_user(username)
