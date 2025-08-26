@@ -255,24 +255,3 @@ def initialize_database():
     configure_database()
     create_users_table()
     create_admins_table()
-
-    conn = psycopg2.connect(
-        dbname=os.getenv("POSTGRES_DB"),
-        user=os.getenv("POSTGRES_USER"),
-        password=os.getenv("POSTGRES_PASSWORD"),
-        host=os.getenv("POSTGRES_HOST", "localhost"),
-        port=os.getenv("POSTGRES_PORT", "5432"),
-    )
-    cur = conn.cursor()
-    # Ensure the users table exists
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS users (
-            username TEXT PRIMARY KEY,
-            password TEXT
-        );
-    """
-    )
-    conn.commit()
-    cur.close()
-    conn.close()

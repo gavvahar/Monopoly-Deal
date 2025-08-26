@@ -4,6 +4,9 @@ Tests for the game lobby system with session management.
 """
 
 from fastapi.testclient import TestClient
+from unittest.mock import patch
+from datetime import datetime
+import pytz
 from main import app, game_sessions
 import os
 
@@ -12,87 +15,97 @@ def test_lobby_system():
     """Test the complete lobby system functionality."""
     print("Testing Lobby System...")
 
-    client = TestClient(app)
+    # Mock time to be outside business hours (weekend)
+    est = pytz.timezone("US/Eastern")
+    weekend_time = est.localize(datetime(2024, 1, 20, 11, 0, 0))  # Saturday 11 AM
 
-    # Clear any existing sessions
-    game_sessions.clear()
+    with patch("main.datetime") as mock_datetime:
+        mock_datetime.now.return_value = weekend_time
 
-    # Test accessing lobby without login (should redirect to login)
-    response = client.get("/lobby", follow_redirects=False)
-    assert response.status_code == 303
-    assert response.headers["location"] == "/login"
-    print("✓ Lobby auth protection test passed")
+        client = TestClient(app)
 
-    # Login first to test lobby functionality
-    # Use environment credentials or default test credentials
-    username = os.getenv("POSTGRES_USER", "nihar")
-    password = os.getenv("POSTGRES_PASSWORD", "")
+        # Clear any existing sessions
+        game_sessions.clear()
 
-    # Test successful login redirects to lobby
-    response = client.post(
-        "/login",
-        data={"username": username, "password": password},
-        follow_redirects=False,
-    )
-    assert response.status_code == 303
-    assert response.headers["location"] == "/lobby"
-    print("✓ Login redirects to lobby test passed")
+        # Test accessing lobby without login (should redirect to login)
+        response = client.get("/lobby", follow_redirects=False)
+        assert response.status_code == 303
+        assert response.headers["location"] == "/login"
+        print("✓ Lobby auth protection test passed")
 
-    # Get session cookies for authenticated requests
-    cookies = response.cookies
+        # Login first to test lobby functionality
+        # Use environment credentials or default test credentials
+        username = os.getenv("POSTGRES_USER", "nihar")
+        password = os.getenv("POSTGRES_PASSWORD", "")
 
-    # Test lobby page GET
-    response = client.get("/lobby", cookies=cookies)
-    assert response.status_code == 200
-    assert "Game Lobby" in response.text
-    assert "Create New Game" in response.text
-    assert "Join Existing Game" in response.text
-    print("✓ Lobby page display test passed")
+        # Test successful login redirects to lobby
+        response = client.post(
+            "/login",
+            data={"username": username, "password": password},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        assert response.headers["location"] == "/lobby"
+        print("✓ Login redirects to lobby test passed")
 
-    # Test creating a new game session
-    response = client.post(
-        "/lobby",
-        data={"action": "create_game"},
-        cookies=cookies,
-        follow_redirects=False,
-    )
-    assert response.status_code == 303
-    assert response.headers["location"] == "/lobby"
+        # Get session cookies for authenticated requests
+        cookies = response.cookies
 
-    # Check that a session was created
-    assert len(game_sessions) == 1
-    session_code = list(game_sessions.keys())[0]
-    assert username in game_sessions[session_code]["players"]
-    print("✓ Create game session test passed")
+        # Test lobby page GET
+        response = client.get("/lobby", cookies=cookies)
+        assert response.status_code == 200
+        assert "Game Lobby" in response.text
+        assert "Create New Game" in response.text
+        assert "Join Existing Game" in response.text
+        print("✓ Lobby page display test passed")
 
-    # Test lobby shows current session
-    response = client.get("/lobby", cookies=cookies)
-    assert response.status_code == 200
-    assert session_code in response.text
-    assert "Current Game Session" in response.text
-    print("✓ Lobby shows current session test passed")
+        # Test creating a new game session
+        response = client.post(
+            "/lobby",
+            data={"action": "create_game"},
+            cookies=cookies,
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        assert response.headers["location"] == "/lobby"
 
-    # Test starting the game
-    response = client.post(
-        "/lobby", data={"action": "start_game"}, cookies=cookies, follow_redirects=False
-    )
-    assert response.status_code == 303
-    assert response.headers["location"] == f"/play/{session_code}"
+        # Check that a session was created
+        assert len(game_sessions) == 1
+        session_code = list(game_sessions.keys())[0]
+        assert username in game_sessions[session_code]["players"]
+        print("✓ Create game session test passed")
 
-    # Check that the session was started
-    assert game_sessions[session_code]["started"] is True
-    assert game_sessions[session_code]["game_state"] is not None
-    print("✓ Start game test passed")
+        # Test lobby shows current session
+        response = client.get("/lobby", cookies=cookies)
+        assert response.status_code == 200
+        assert session_code in response.text
+        assert "Current Game Session" in response.text
+        print("✓ Lobby shows current session test passed")
 
-    # Test accessing the game
-    response = client.get(f"/play/{session_code}", cookies=cookies)
-    assert response.status_code == 200
-    assert "Game Started!" in response.text
-    # The username might be in current_player, let's check for game elements instead
-    assert "Your Hand:" in response.text
-    print("✓ Play game access test passed")
+        # Test starting the game
+        response = client.post(
+            "/lobby",
+            data={"action": "start_game"},
+            cookies=cookies,
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        assert response.headers["location"] == f"/play/{session_code}"
 
-    print("✅ All lobby system tests passed!")
+        # Check that the session was started
+        assert game_sessions[session_code]["started"] is True
+        assert game_sessions[session_code]["game_state"] is not None
+        print("✓ Start game test passed")
+
+        # Test accessing the game
+        response = client.get(f"/play/{session_code}", cookies=cookies)
+        assert response.status_code == 200
+        assert "Game Started!" in response.text
+        # The username might be in current_player, let's check for game elements instead
+        assert "Your Hand:" in response.text
+        print("✓ Play game access test passed")
+
+        print("✅ All lobby system tests passed!")
 
 
 def test_multiplayer_session():
