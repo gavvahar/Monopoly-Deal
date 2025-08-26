@@ -69,5 +69,31 @@ else
 fi
 
 echo ""
+echo -e "${BLUE}🐍 Conda-based Linting & Tests${NC}"
+echo "-------------------------------"
+
+if command -v conda >/dev/null 2>&1; then
+    echo -e "${YELLOW}Updating Conda environment...${NC}"
+    conda env update --file environment.yml --name base
+
+    echo -e "${YELLOW}Installing flake8 in Conda...${NC}"
+    conda install -y flake8
+
+    echo -e "${YELLOW}Running flake8 (strict)...${NC}"
+    flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+    echo -e "${YELLOW}Running flake8 (warnings)...${NC}"
+    flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    echo -e "${YELLOW}Installing pytest in Conda...${NC}"
+    conda install -y pytest
+
+    echo -e "${YELLOW}Running pytest...${NC}"
+    pytest
+else
+    echo -e "${YELLOW}⚠️  Conda not available - skipping Conda-based linting and tests${NC}"
+fi
+
+echo ""
 echo -e "${GREEN}🎉 All tests completed successfully!${NC}"
 echo "=================================="
