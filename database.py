@@ -189,6 +189,58 @@ def create_user(username: str, password: str = "") -> bool:
     return True
 
 
+def create_admins_table():
+    """
+    Create the admins table if it doesn't exist.
+    """
+    create_table_query = """
+    CREATE TABLE IF NOT EXISTS admins (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL
+    );
+    """
+    execute_query(create_table_query)
+
+
+def get_admin_usernames() -> List[str]:
+    """
+    Get all admin usernames from the database.
+    """
+    query = "SELECT username FROM admins;"
+    results = execute_query(query, fetch=True) or []
+    return [row[0] for row in results]
+
+
+def admin_exists(username: str) -> bool:
+    """
+    Check if an admin user exists.
+    """
+    return username in get_admin_usernames()
+
+
+def create_admin_user(username: str, password: str) -> bool:
+    """
+    Create a new admin user.
+    """
+    if admin_exists(username):
+        return False
+    query = "INSERT INTO admins (username, password) VALUES (%s, %s);"
+    execute_query(query, (username, password))
+    return True
+
+
+def validate_admin_login(username: str, password: str) -> bool:
+    """
+    Validate admin login credentials.
+    """
+    query = "SELECT password FROM admins WHERE username = %s;"
+    results = execute_query(query, (username,), fetch=True) or []
+    if not results:
+        return False
+    return results[0][0] == password
+
+
 def initialize_database():
     """
     Initialize the database by creating necessary tables.
@@ -202,6 +254,7 @@ def initialize_database():
     # Ensure configuration is set
     configure_database()
     create_users_table()
+    create_admins_table()
 
     conn = psycopg2.connect(
         dbname=os.getenv("POSTGRES_DB"),

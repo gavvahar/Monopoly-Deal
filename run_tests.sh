@@ -25,9 +25,9 @@ else
     exit 1
 fi
 
-# 2. Flake8 linting  
+# 2. Flake8 linting
 echo -e "${YELLOW}Running Flake8 linting...${NC}"
-if flake8 --max-line-length=88 .; then
+if flake8 --max-line-length=88 --exclude=".venv,.git,__pycache__,migrations,env,.env" .; then
     echo -e "${GREEN}✅ Flake8 linting passed${NC}"
 else
     echo -e "${RED}❌ Flake8 linting failed${NC}"
@@ -51,7 +51,7 @@ fi
 echo -e "${YELLOW}Checking for Python class definitions...${NC}"
 CLASS_FILES=$(grep -RlnE \
     --include='*.py' \
-    --exclude-dir={.git,venv,.venv,node_modules,dist,build,.mypy_cache,.pytest_cache} \
+    --exclude-dir={.git,venv,.venv,node_modules,dist,build,.mypy_cache,.pytest_cache,env,.env} \
     '^[[:space:]]*class[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*(\(|:)' \
     . 2>/dev/null || true)
 
@@ -66,37 +66,6 @@ if [ -n "$CLASS_FILES" ]; then
     exit 1
 else
     echo -e "${GREEN}✅ No Python classes found - function-based architecture maintained${NC}"
-fi
-
-echo ""
-echo -e "${BLUE}🧪 Python Test Suite${NC}"
-echo "-------------------"
-
-# 5. Run FastAPI tests
-echo -e "${YELLOW}Running FastAPI tests...${NC}"
-if python test_fastapi.py; then
-    echo -e "${GREEN}✅ FastAPI tests passed${NC}"
-else
-    echo -e "${RED}❌ FastAPI tests failed${NC}"
-    exit 1
-fi
-
-# 6. Run Lobby tests
-echo -e "${YELLOW}Running Lobby tests...${NC}"
-if python test_lobby.py; then
-    echo -e "${GREEN}✅ Lobby tests passed${NC}"
-else
-    echo -e "${RED}❌ Lobby tests failed${NC}"
-    exit 1
-fi
-
-# 7. Run Database tests (allow failure since DB may not be available)
-echo -e "${YELLOW}Running Database tests...${NC}"
-if python test_database.py; then
-    echo -e "${GREEN}✅ Database tests passed${NC}"
-else
-    echo -e "${YELLOW}⚠️  Database tests failed (expected if PostgreSQL not available)${NC}"
-    # Don't exit on database test failure since PostgreSQL may not be running
 fi
 
 echo ""

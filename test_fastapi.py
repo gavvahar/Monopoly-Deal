@@ -1,52 +1,64 @@
 #!/usr/bin/env python3
 """
 Basic tests for the FastAPI application to verify conversion from Flask.
+Updated to handle business hours restrictions.
 """
 
 from fastapi.testclient import TestClient
+from unittest.mock import patch
+from datetime import datetime
+import pytz
 from main import app
 
 
 def test_fastapi_application():
-    """Test FastAPI application endpoints."""
+    """Test FastAPI application endpoints outside business hours."""
     print("Testing FastAPI application...")
 
     client = TestClient(app)
+    est = pytz.timezone("US/Eastern")
 
-    # Test home page (redirects to login)
-    response = client.get("/")
-    assert response.status_code == 200
-    assert "Monopoly Deal" in response.text
-    assert "Login" in response.text
-    print("✓ Home page test passed")
+    # Test outside business hours (6 PM EST) to ensure normal functionality
+    after_hours = est.localize(datetime(2024, 1, 15, 18, 0, 0))  # Monday 6 PM
+    with patch("main.datetime") as mock_datetime:
+        mock_datetime.now.return_value = after_hours
 
-    # Test login page GET
-    response = client.get("/login")
-    assert response.status_code == 200
-    assert "username" in response.text
-    assert "password" in response.text
-    print("✓ Login page GET test passed")
+        # Test home page (redirects to login)
+        response = client.get("/")
+        assert response.status_code == 200
+        assert "Monopoly Deal" in response.text
+        assert "Login" in response.text
+        print("✓ Home page test passed")
 
-    # Test docs page (FastAPI feature)
-    response = client.get("/docs")
-    assert response.status_code == 200
-    print("✓ API docs test passed")
+        # Test login page GET
+        response = client.get("/login")
+        assert response.status_code == 200
+        assert "username" in response.text
+        assert "password" in response.text
+        print("✓ Login page GET test passed")
 
-    # Test invalid login POST
-    response = client.post("/login", data={"username": "invalid", "password": "wrong"})
-    assert response.status_code == 200
-    assert "Invalid username or password" in response.text
-    print("✓ Invalid login test passed")
+        # Test docs page (FastAPI feature)
+        response = client.get("/docs")
+        assert response.status_code == 200
+        print("✓ API docs test passed")
 
-    # Test play page without session (should redirect)
-    response = client.get("/play", follow_redirects=False)
-    assert response.status_code == 303  # Redirect
-    print("✓ Play page auth test passed")
+        # Test invalid login POST
+        response = client.post(
+            "/login", data={"username": "invalid", "password": "wrong"}
+        )
+        assert response.status_code == 200
+        assert "Invalid username or password" in response.text
+        print("✓ Invalid login test passed")
 
-    # Test logout
-    response = client.get("/logout", follow_redirects=False)
-    assert response.status_code == 303  # Redirect
-    print("✓ Logout test passed")
+        # Test play page without session (should redirect)
+        response = client.get("/play", follow_redirects=False)
+        assert response.status_code == 303  # Redirect
+        print("✓ Play page auth test passed")
+
+        # Test logout
+        response = client.get("/logout", follow_redirects=False)
+        assert response.status_code == 303  # Redirect
+        print("✓ Logout test passed")
 
     print("✅ All FastAPI tests passed!")
 

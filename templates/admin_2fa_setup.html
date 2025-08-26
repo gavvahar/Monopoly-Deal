@@ -1,0 +1,118 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Admin 2FA Setup - Monopoly Deal</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <div class="center-container">
+      <h1 class="game-title">Monopoly Deal - Admin Panel</h1>
+      <div class="login-box">
+        <h2>Two-Factor Authentication Setup</h2>
+
+        <div class="2fa-setup-content">
+          <p>
+            Scan this QR code with your authenticator app (Google Authenticator,
+            Authy, etc.):
+          </p>
+
+          <div style="text-align: center; margin: 20px 0">
+            <img
+              src="{{ qr_code }}"
+              alt="2FA QR Code"
+              style="max-width: 256px; max-height: 256px"
+            />
+          </div>
+
+          <div
+            style="
+              margin: 20px 0;
+              padding: 15px;
+              background-color: var(--bg-tertiary);
+              border-radius: 5px;
+              color: var(--text-primary);
+            "
+          >
+            <h4>Manual Entry (if QR code doesn't work):</h4>
+            <p><strong>Secret Key:</strong></p>
+            <code
+              style="
+                background-color: var(--bg-secondary);
+                padding: 5px;
+                word-break: break-all;
+                font-family: monospace;
+                color: var(--text-accent);
+              "
+              >{{ totp_secret }}</code
+            >
+            <p style="margin-top: 10px">
+              <small>Account: admin@monopoly-deal</small>
+            </p>
+          </div>
+
+          <div
+            style="
+              margin: 20px 0;
+              padding: 15px;
+              background-color: var(--bg-accent);
+              border-radius: 5px;
+              color: var(--text-primary);
+            "
+          >
+            <h4>📱 Setup Instructions:</h4>
+            <ol style="text-align: left; margin: 10px 0">
+              <li>
+                Install an authenticator app (Google Authenticator, Authy,
+                Microsoft Authenticator)
+              </li>
+              <li>Scan the QR code above OR enter the secret key manually</li>
+              <li>
+                The app will generate 6-digit codes that change every 30 seconds
+              </li>
+              <li>
+                Use these codes along with your admin password for bypass access
+              </li>
+            </ol>
+          </div>
+
+          <div
+            style="
+              margin: 20px 0;
+              padding: 15px;
+              background-color: var(--bg-tertiary);
+              border-radius: 5px;
+              color: var(--text-primary);
+            "
+          >
+            <h4>⚠️ Important:</h4>
+            <ul style="text-align: left; margin: 10px 0">
+              <li>Save the secret key in a secure location as backup</li>
+              <li>
+                Add <code>ADMIN_TOTP_SECRET={{ totp_secret }}</code> to your
+                .env file
+              </li>
+              <li>
+                2FA is now required for admin bypass during business hours
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div style="margin-top: 20px">
+          <a
+            href="/admin"
+            class="btn"
+            style="
+              display: inline-block;
+              padding: 10px 20px;
+              text-decoration: none;
+            "
+          >
+            Back to Admin Panel
+          </a>
+        </div>
+      </div>
+    </div>
+    <script src="/static/theme.js"></script>
+  </body>
+</html>

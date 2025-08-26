@@ -1,0 +1,101 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Service Unavailable - Monopoly Deal</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <div class="center-container">
+      <h1 class="game-title">Monopoly Deal</h1>
+      <div class="login-box">
+        <h2>Service Temporarily Unavailable</h2>
+        <div class="business-hours-message">
+          <p>
+            <strong
+              >This service is restricted during business hours (9:00 AM - 5:00
+              PM EST, Monday-Friday).</strong
+            >
+          </p>
+          <p>
+            Please try again outside of business hours to access the Monopoly
+            Deal game.
+          </p>
+          <p>Current time: <span id="current-time">{{ current_time }}</span></p>
+        </div>
+        <div class="retry-info">
+          <p>
+            <small>
+              The service will be available again after 5:00 PM EST, before 9:00
+              AM EST, or during weekends.
+            </small>
+          </p>
+        </div>
+
+        <!-- Admin Bypass Form -->
+        <div
+          class="admin-bypass-section"
+          style="
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+          "
+        >
+          <h3>Admin Access (2FA Required)</h3>
+          {% if error %}
+          <div class="error-message" style="color: red; margin-bottom: 10px">
+            {{ error }}
+          </div>
+          {% endif %}
+          <form method="post" action="/admin-bypass">
+            <input
+              type="hidden"
+              name="redirect_url"
+              value="{{ request.url.path }}"
+            />
+            <div class="form-group">
+              <label for="admin_password">Admin Password:</label>
+              <input
+                type="password"
+                id="admin_password"
+                name="admin_password"
+                required
+                style="width: 100%; padding: 8px; margin: 5px 0"
+              />
+            </div>
+            <div class="form-group">
+              <label for="totp_code">2FA Code (6 digits):</label>
+              <input
+                type="text"
+                id="totp_code"
+                name="totp_code"
+                pattern="[0-9]{6}"
+                maxlength="6"
+                placeholder="000000"
+                required
+                style="
+                  width: 100%;
+                  padding: 8px;
+                  margin: 5px 0;
+                  text-align: center;
+                  font-family: monospace;
+                  font-size: 18px;
+                "
+              />
+              <small style="color: #666"
+                >Enter the 6-digit code from your authenticator app</small
+              >
+            </div>
+            <button
+              type="submit"
+              class="btn"
+              style="width: 100%; padding: 10px"
+            >
+              Bypass Restriction
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <script src="/static/theme.js"></script>
+  </body>
+</html>
