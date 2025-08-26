@@ -105,12 +105,13 @@ def test_initialize_database():
 
     with patch("database.configure_database") as mock_config, patch(
         "database.create_users_table"
-    ) as mock_create_table:
+    ) as mock_create_table, patch("database.create_admins_table") as mock_create_admins:
 
         database.initialize_database()
 
         mock_config.assert_called_once()
         mock_create_table.assert_called_once()
+        mock_create_admins.assert_called_once()
         print("✓ initialize_database test passed")
 
 
