@@ -12,6 +12,9 @@ pkgs.mkShell {
     pkgs.docker-compose
   ];
   shellHook = ''
-    exec ${pkgs.fish}/bin/fish
+    if [ ! -d env ]; then
+      python3 -m venv env
+    fi
+    exec ${pkgs.fish}/bin/fish -C 'source ./env/bin/activate.fish'
   '';
 }
