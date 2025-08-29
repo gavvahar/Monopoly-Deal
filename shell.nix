@@ -2,7 +2,7 @@
 
 pkgs.mkShell {
   buildInputs = [
-    pkgs.python312
+    pkgs.python313
     pkgs.fish
     pkgs.zoxide
     pkgs.tmux
