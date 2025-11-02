@@ -15,33 +15,16 @@ networks:
         - subnet: 172.20.0.0/16
 
 services:
-  test:
+  tox:
     build:
       context: .
       dockerfile: Docker/Dockerfile
-    container_name: monopoly_test
+    working_dir: /app
     depends_on:
-      - db
-      - database_service
-      - web
+      database_service:
+        condition: service_healthy
     command: tox
-    environment:
-      <<: *environment
-    volumes:
-      - .:/app
-    working_dir: /app
 
-  test-minimal:
-    build:
-      context: .
-      dockerfile: Docker/Dockerfile.test-minimal
-    pull_policy: build
-    container_name: monopoly_test_minimal
-    volumes:
-      - .:/app
-    working_dir: /app
-    depends_on:
-      - web
 
   database_service:
     build:
@@ -58,6 +41,11 @@ services:
       - db
     volumes:
       - .:/app
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     working_dir: /app
 
   web:
@@ -110,5 +98,3 @@ services:
 volumes:
   pgdata:
   pgadmin_data:
-  tox:
-
