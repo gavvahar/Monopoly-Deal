@@ -15,32 +15,16 @@ networks:
         - subnet: 172.20.0.0/16
 
 services:
-  test:
+  tox:
     build:
       context: .
-      dockerfile: Docker/Dockerfile.test
-    pull_policy: build
-    container_name: monopoly_test
-    volumes:
-      - .:/app
+      dockerfile: Docker/Dockerfile
     working_dir: /app
     depends_on:
-      - database_service
-      - web
-      - db
-      - pgadmin
+      database_service:
+        condition: service_completed_successfully
+    command: tox
 
-  test-minimal:
-    build:
-      context: .
-      dockerfile: Docker/Dockerfile.test-minimal
-    pull_policy: build
-    container_name: monopoly_test_minimal
-    volumes:
-      - .:/app
-    working_dir: /app
-    depends_on:
-      - web
 
   database_service:
     build:
@@ -54,7 +38,8 @@ services:
     environment:
       <<: *environment
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     volumes:
       - .:/app
     working_dir: /app
@@ -75,8 +60,10 @@ services:
     volumes:
       - .:/app
     depends_on:
-      - db
-      - database_service
+      db:
+        condition: service_healthy
+      database_service:
+        condition: service_completed_successfully
 
   db:
     image: postgres:16
@@ -90,6 +77,12 @@ services:
         ipv4_address: 172.20.0.12
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   pgadmin:
     image: dpage/pgadmin4:9.6
@@ -109,4 +102,3 @@ services:
 volumes:
   pgdata:
   pgadmin_data:
-

@@ -6,8 +6,10 @@ that can be shared across multiple projects using function-based approach.
 """
 
 import os
+import time
 import psycopg2
 from typing import List, Tuple, Optional
+from psycopg2 import OperationalError
 
 
 # Global database configuration
@@ -15,7 +17,7 @@ _db_config = {
     "db_name": None,
     "db_user": None,
     "db_password": None,
-    "db_host": "172.20.0.12",  # Default PostgreSQL container IP
+    "db_host": "db",  # Docker service name for PostgreSQL
     "db_port": 5432,
 }
 
@@ -24,7 +26,7 @@ def configure_database(
     db_name: Optional[str] = None,
     db_user: Optional[str] = None,
     db_password: Optional[str] = None,
-    db_host: str = "172.20.0.12",  # Default to PostgreSQL container IP
+    db_host: str = "db",  # Default to PostgreSQL service name
     db_port: int = 5432,
 ):
     """
@@ -34,26 +36,24 @@ def configure_database(
         db_name: Database name (defaults to env POSTGRES_DB or "monopoly")
         db_user: Database user (defaults to env POSTGRES_USER or "nihar")
         db_password: Database password (defaults to env POSTGRES_PASSWORD)
-        db_host: Database host (defaults to PostgreSQL container IP "172.20.0.12")
+        db_host: Database host (defaults to PostgreSQL service name "db")
         db_port: Database port (defaults to 5432)
     """
     # Allow override via environment variables for flexible deployment
     default_host = os.getenv("DB_HOST", db_host)
-    if default_host == "db":  # Convert Docker service name to IP for IP-based access
-        default_host = "172.20.0.12"
-
+    default_port = int(os.getenv("DB_PORT", db_port))
     _db_config.update(
         {
             "db_name": db_name or os.getenv("POSTGRES_DB", "monopoly"),
             "db_user": db_user or os.getenv("POSTGRES_USER", "nihar"),
             "db_password": db_password or os.getenv("POSTGRES_PASSWORD"),
             "db_host": default_host,
-            "db_port": db_port,
+            "db_port": default_port,
         }
     )
 
 
-def get_database_connection():
+def get_database_connection(retries: int = 5, base_delay: float = 1.5):
     """
     Create and return a new database connection using current configuration.
 
@@ -67,13 +67,28 @@ def get_database_connection():
     if _db_config["db_name"] is None:
         configure_database()
 
-    return psycopg2.connect(
-        dbname=_db_config["db_name"],
-        user=_db_config["db_user"],
-        password=_db_config["db_password"],
-        host=_db_config["db_host"],
-        port=_db_config["db_port"],
-    )
+    attempt = 0
+    last_error: Optional[OperationalError] = None
+
+    while attempt <= retries:
+        try:
+            return psycopg2.connect(
+                dbname=_db_config["db_name"],
+                user=_db_config["db_user"],
+                password=_db_config["db_password"],
+                host=_db_config["db_host"],
+                port=_db_config["db_port"],
+            )
+        except OperationalError as exc:
+            last_error = exc
+            if attempt == retries:
+                raise
+            sleep_for = base_delay * (attempt + 1)
+            time.sleep(sleep_for)
+            attempt += 1
+
+    # Should never reach here, but keep static analyzers happy
+    raise last_error or OperationalError("Failed to establish database connection")
 
 
 def execute_query(query: str, params: Optional[Tuple] = None, fetch: bool = False):

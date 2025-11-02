@@ -1,0 +1,22 @@
+[
+  {
+    "fileName": "main-overview.mdc",
+    "description": "Complete system overview detailing the core game session management system, business hours restrictions, admin bypass functionality, and how these components interact"
+  },
+  {
+    "fileName": "game-rules-algorithms.mdc",
+    "description": "Detailed documentation of the Monopoly Deal game rules implementation, including rent computation algorithms, build validation logic, and action card resolution systems"
+  },
+  {
+    "fileName": "session-management-flow.mdc",
+    "description": "Comprehensive documentation of the game session lifecycle, including creation, joining, and management flows, along with player limit enforcement and state management"
+  },
+  {
+    "fileName": "authentication-flow.mdc",
+    "description": "Documentation of the custom TOTP-based 2FA system for admin access, including the bypass mechanism for business hours restrictions and session-based authentication persistence"
+  },
+  {
+    "fileName": "business-hours-system.mdc",
+    "description": "Detailed documentation of the business hours restriction system, including time-zone handling, restriction rules, and interaction with the admin bypass functionality"
+  }
+]
