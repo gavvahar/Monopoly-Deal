@@ -3,15 +3,10 @@ FastAPI app for Monopoly Deal game.
 Handles user login, game play, and admin/database operations.
 """
 
-import os
 from os import path
 from contextlib import asynccontextmanager
 from datetime import datetime
-import pytz
-import pyotp
-import qrcode
-import io
-import base64
+from typing import Annotated, Optional
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -28,6 +23,7 @@ from database import (
     create_admin_user,
     admin_exists,
 )
+import os, pytz, pyotp, qrcode, io, base64
 
 
 def initialize():
@@ -316,8 +312,8 @@ async def login_get(request: Request):
 @app.post("/login")
 async def login_post(
     request: Request,
-    username: str = Form(...),
-    password: str = Form(...),
+    username: Annotated[str, Form(...)],
+    password: Annotated[str, Form(...)],
 ):
     """Handle user login and redirect to lobby."""
     # Check business hours restriction for hosting (login needed to create sessions)
@@ -354,11 +350,13 @@ async def admin_bypass_get(request: Request):
 @app.post("/admin-bypass")
 async def admin_bypass_post(
     request: Request,
-    admin_password: str = Form(...),
-    totp_code: str = Form(...),
-    redirect_url: str = Form("/"),
+    admin_password: Annotated[str, Form(...)],
+    totp_code: Annotated[str, Form(...)],
+    redirect_url: Annotated[str, Form(None)] = None,
 ):
     """Handle admin bypass for business hours restriction with 2FA."""
+    if redirect_url is None:
+        redirect_url = "/"
     admin_pass = os.getenv("ADMIN_PASSWORD")
 
     # Check password first
@@ -403,8 +401,8 @@ async def admin_login_get(request: Request):
 @app.post("/admin-login")
 async def admin_login_post(
     request: Request,
-    username: str = Form(...),
-    password: str = Form(...),
+    username: Annotated[str, Form(...)],
+    password: Annotated[str, Form(...)],
 ):
     """Handle admin login using credentials from .env."""
     admin_user = os.getenv("ADMIN_USER")
@@ -472,8 +470,8 @@ async def lobby_get(request: Request):
 @app.post("/lobby")
 async def lobby_post(
     request: Request,
-    action: str = Form(...),
-    session_code: str = Form(None),
+    action: Annotated[str, Form(...)],
+    session_code: Annotated[Optional[str], Form(None)] = None,
 ):
     """Handle POST request for lobby actions."""
     username = get_current_user(request)
@@ -595,8 +593,8 @@ async def play_get(request: Request, session_code: str):
 async def play_post(
     request: Request,
     session_code: str,
-    action: str = Form(...),
-    card_idx: int = Form(None),
+    action: Annotated[str, Form(...)],
+    card_idx: Annotated[Optional[int], Form(None)] = None,
 ):
     """Handle POST request for game actions with session code."""
     # Allow playing in existing game sessions during business hours
@@ -685,8 +683,8 @@ async def admin_get(request: Request):
 @app.post("/admin")
 async def admin_post(
     request: Request,
-    new_username: str = Form(None),
-    new_password: str = Form(""),
+    new_username: Annotated[Optional[str], Form(None)] = None,
+    new_password: Annotated[str, Form("")] = "",
 ):
     """Handle POST request for admin page."""
     if not get_current_admin(request):
