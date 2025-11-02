@@ -1,0 +1,10 @@
+name: monopoly   # change this to the name you want
+channels:
+  - defaults
+  - conda-forge
+
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      - -r requirements.txt
