@@ -352,7 +352,7 @@ async def admin_bypass_post(
     request: Request,
     admin_password: Annotated[str, Form(...)],
     totp_code: Annotated[str, Form(...)],
-    redirect_url: Annotated[str, Form(None)] = None,
+    redirect_url: Annotated[Optional[str], Form()] = None,
 ):
     """Handle admin bypass for business hours restriction with 2FA."""
     if redirect_url is None:
@@ -471,7 +471,7 @@ async def lobby_get(request: Request):
 async def lobby_post(
     request: Request,
     action: Annotated[str, Form(...)],
-    session_code: Annotated[Optional[str], Form(None)] = None,
+    session_code: Annotated[Optional[str], Form()] = None,
 ):
     """Handle POST request for lobby actions."""
     username = get_current_user(request)
@@ -594,7 +594,7 @@ async def play_post(
     request: Request,
     session_code: str,
     action: Annotated[str, Form(...)],
-    card_idx: Annotated[Optional[int], Form(None)] = None,
+    card_idx: Annotated[Optional[int], Form()] = None,
 ):
     """Handle POST request for game actions with session code."""
     # Allow playing in existing game sessions during business hours
@@ -683,8 +683,8 @@ async def admin_get(request: Request):
 @app.post("/admin")
 async def admin_post(
     request: Request,
-    new_username: Annotated[Optional[str], Form(None)] = None,
-    new_password: Annotated[str, Form("")] = "",
+    new_username: Annotated[Optional[str], Form()] = None,
+    new_password: Annotated[str, Form()] = "",
 ):
     """Handle POST request for admin page."""
     if not get_current_admin(request):
