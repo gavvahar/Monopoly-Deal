@@ -2,99 +2,28 @@ name: Code Quality
 
 on:
   push:
+  pull_request:
 
 jobs:
-  format:
+  quality:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out code
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref || github.ref }}
           fetch-depth: 0
 
-      # Python setup
-      - uses: actions/setup-python@v5
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: "pip"
 
-      - name: Install Python tools
+      - name: Install tox
         run: |
           python -m pip install --upgrade pip
-          pip install black flake8
+          pip install tox
 
-      - name: Run Black (format)
-        run: black .
-
-      - name: Run Flake8 (lint with max-line-length=88)
-        run: flake8 --max-line-length=88 .
-
-      # Prettier setup (for HTML, CSS, JS)
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Install Prettier
-        run: npm install --global prettier
-
-      - name: Run Prettier
-        run: prettier --write "**/*.{html,css,js}"
-
-      # Commit back changes (only on same-repo branches)
-      - name: Commit changes
-        if: github.event_name == 'push'
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Apply formatting (Black + Prettier)"
-          branch: ${{ github.head_ref || github.ref_name }}
-
-  no-classes-check:
-    needs: format
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Check for classes in Python code (strict)
-        run: |
-          echo "Scanning for Python class definitions..."
-          if grep -RInE \
-              --include='*.py' \
-              --exclude-dir={.git,venv,.venv,node_modules,dist,build,.mypy_cache,.pytest_cache} \
-              '^[[:space:]]*class[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*(\(|:)' \
-              .; then
-            echo "Error: Class definitions found in the codebase!"
-            exit 1
-          else
-            echo "No classes found. All good!"
-          fi
-
-  test:
-    needs: no-classes-check
-    runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 5
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: 'pip'
-      
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      
-      - name: Lint with flake8
-        run: |
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
-      
-      - name: Run tests
-        run: |
-          python test_fastapi.py
+      - name: Run tox (all)
+        run: tox -e all
