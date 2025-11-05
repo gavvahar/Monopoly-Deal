@@ -1,7 +1,7 @@
 # rules.py
 """
-Function-based Monopoly Deal (US) rules.
-Import what you need: set sizes, rent, turn limits, builds, JSN stack, etc.
+Function-based car-themed rules derived from Monopoly Deal mechanics.
+Import what you need: set sizes, rent, turn limits, builds, engine-cut stack, etc.
 """
 
 from typing import Dict, List, Tuple, Union
@@ -12,16 +12,16 @@ from typing import Dict, List, Tuple, Union
 def get_set_sizes() -> Dict[str, int]:
     """Return the number of properties required for each color set."""
     return {
-        "Brown": 2,
-        "Light Blue": 3,
-        "Pink": 3,
-        "Orange": 3,
-        "Red": 3,
-        "Yellow": 3,
-        "Green": 3,
-        "Dark Blue": 2,
-        "Railroads": 4,
-        "Utilities": 2,
+        "Lexus": 2,
+        "Tesla": 3,
+        "Rivian": 3,
+        "Chevelote": 3,
+        "Nissan": 3,
+        "Ford": 3,
+        "Benz": 3,
+        "Lamborghini": 2,
+        "McLaren": 4,
+        "Bugatti": 2,
     }
 
 
@@ -29,23 +29,23 @@ def get_rent_table() -> Dict[str, List[int]]:
     """Return rent values for each color set based on number owned."""
     # Index = number of properties owned (1..set_size)
     return {
-        "Brown": [1, 2],
-        "Light Blue": [1, 2, 3],
-        "Pink": [1, 2, 4],
-        "Orange": [1, 3, 5],
-        "Red": [2, 3, 6],
-        "Yellow": [2, 4, 6],
-        "Green": [2, 4, 7],
-        "Dark Blue": [3, 8],
-        "Railroads": [1, 2, 3, 4],
-        "Utilities": [1, 2],
+        "Lexus": [1, 2],
+        "Tesla": [1, 2, 3],
+        "Rivian": [1, 2, 4],
+        "Chevelote": [1, 3, 5],
+        "Nissan": [2, 3, 6],
+        "Ford": [2, 4, 6],
+        "Benz": [2, 4, 7],
+        "Lamborghini": [3, 8],
+        "McLaren": [1, 2, 3, 4],
+        "Bugatti": [1, 2],
     }
 
 
 def get_build_eligible_colors() -> List[str]:
     """Return colors eligible for building houses/hotels."""
     # Houses/Hotels only on color sets (not rail/utility)
-    return [c for c in get_set_sizes() if c not in {"Railroads", "Utilities"}]
+    return [c for c in get_set_sizes() if c not in {"McLaren", "Bugatti"}]
 
 
 def get_turn_limits() -> Dict[str, int]:
@@ -58,11 +58,11 @@ def get_action_kinds() -> Dict[str, str]:
     """Return target semantics for common action cards."""
     # Target semantics for common actions
     return {
-        "Sly Deal": "single",
-        "Debt Collector": "single",
-        "Forced Deal": "single",
-        "It’s My Birthday": "all",
-        "Deal Breaker": "steal_set",
+        "Sneak Swap": "single",
+        "Repo Notice": "single",
+        "Tow Trade": "single",
+        "Track Day Fees": "all",
+        "Garage Takeover": "steal_set",
         # rent cards marked separately via get_rent_card_colors()
     }
 
@@ -71,12 +71,12 @@ def get_rent_card_colors() -> Dict[str, List[str]]:
     """Return mapping of rent cards to color sets."""
     s = list(get_set_sizes().keys())
     return {
-        "Rent Brown/Light Blue": ["Brown", "Light Blue"],
-        "Rent Pink/Orange": ["Pink", "Orange"],
-        "Rent Red/Yellow": ["Red", "Yellow"],
-        "Rent Green/Dark Blue": ["Green", "Dark Blue"],
-        "Rent Railroad/Utility": ["Railroads", "Utilities"],
-        "Rent Wild (Any Color)": s,
+        "Rent Lexus/Tesla": ["Lexus", "Tesla"],
+        "Rent Rivian/Chevelote": ["Rivian", "Chevelote"],
+        "Rent Nissan/Ford": ["Nissan", "Ford"],
+        "Rent Benz/Lamborghini": ["Benz", "Lamborghini"],
+        "Rent McLaren/Bugatti": ["McLaren", "Bugatti"],
+        "Rent Wild (Any Collection)": s,
     }
 
 
@@ -167,7 +167,7 @@ def apply_build_bonuses(
 
 
 def cap_double_rent(double_count: int) -> int:
-    """Cap the number of Double the Rent cards applied."""
+    """Cap the number of Turbo Charge cards applied."""
     if get_rule_flags()["limit_double_rent_to_one"]:
         return min(1, double_count)
     return max(0, int(double_count))
@@ -209,25 +209,29 @@ def rent_colors_for_card(card_name: str) -> List[str]:
 
 
 def is_double_rent(card_name: str) -> bool:
-    """Return True if card is Double the Rent."""
-    return card_name == "Double the Rent"
+    """Return True if card is Turbo Charge."""
+    return card_name == "Turbo Charge"
 
 
 def is_just_say_no(card_name: str) -> bool:
-    """Return True if card is Just Say No."""
-    return card_name == "Just Say No"
+    """Return True if card is Cut the Engine."""
+    return card_name == "Cut the Engine"
 
 
-# -------------------- Just Say No stack resolution --------------------
+# -------------------- Cut the Engine stack resolution --------------------
 
 
-def resolve_just_say_no_stack(responses_in_order: List[str]) -> bool:
+def resolve_cut_the_engine_stack(responses_in_order: List[str]) -> bool:
     """
     True if the original action takes effect, False if canceled.
-    Parity rule: even # of JSN -> action stands; odd -> canceled.
+    Parity rule: even -> action stands; odd -> canceled.
     """
-    jsn = sum(1 for c in responses_in_order if c == "Just Say No")
-    return (jsn % 2) == 0
+    engine_cut = sum(1 for c in responses_in_order if c == "Cut the Engine")
+    return (engine_cut % 2) == 0
+
+
+# Backwards compatibility for older callers.
+resolve_just_say_no_stack = resolve_cut_the_engine_stack
 
 
 # -------------------- payment helpers --------------------

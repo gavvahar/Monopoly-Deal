@@ -6,120 +6,120 @@ from collections import Counter
 import random
 
 ALL_PROPERTY_COLORS = [
-    "Brown",
-    "Light Blue",
-    "Pink",
-    "Orange",
-    "Red",
-    "Yellow",
-    "Green",
-    "Dark Blue",
-    "Railroads",
-    "Utilities",
+    "Lexus",
+    "Tesla",
+    "Rivian",
+    "Chevelote",
+    "Nissan",
+    "Ford",
+    "Benz",
+    "Lamborghini",
+    "McLaren",
+    "Bugatti",
 ]
 
 PROPERTY_SET_DEFINITIONS = {
-    "Brown": [
-        ("Mediterranean Avenue", 1),
-        ("Baltic Avenue", 1),
+    "Lexus": [
+        ("Lexus IS 500 F SPORT", 1),
+        ("Lexus RX 500h F SPORT", 1),
     ],
-    "Light Blue": [
-        ("Oriental Avenue", 1),
-        ("Vermont Avenue", 1),
-        ("Connecticut Avenue", 1),
+    "Tesla": [
+        ("Tesla Model 3 Performance", 1),
+        ("Tesla Model Y Performance", 1),
+        ("Tesla Model S Plaid", 1),
     ],
-    "Pink": [
-        ("St. Charles Place", 2),
-        ("States Avenue", 2),
-        ("Virginia Avenue", 2),
+    "Rivian": [
+        ("Rivian R1T Adventure", 2),
+        ("Rivian R1S Launch Edition", 2),
+        ("Rivian Electric Delivery Van", 2),
     ],
-    "Orange": [
-        ("St. James Place", 2),
-        ("Tennessee Avenue", 2),
-        ("New York Avenue", 2),
+    "Chevelote": [
+        ("Chevelote Corvette Z06", 2),
+        ("Chevelote Camaro ZL1", 2),
+        ("Chevelote Silverado Trail Boss", 2),
     ],
-    "Red": [
-        ("Kentucky Avenue", 3),
-        ("Indiana Avenue", 3),
-        ("Illinois Avenue", 3),
+    "Nissan": [
+        ("Nissan Skyline GT-R (R34 Paul Walker)", 3),
+        ("Nissan GT-R (R35)", 3),
+        ("Nissan 370Z Nismo", 3),
     ],
-    "Yellow": [
-        ("Atlantic Avenue", 3),
-        ("Ventnor Avenue", 3),
-        ("Marvin Gardens", 3),
+    "Ford": [
+        ("Ford Mustang Shelby GT500 (1967)", 3),
+        ("Ford GT Heritage Edition", 3),
+        ("Ford F-150 Raptor", 3),
     ],
-    "Green": [
-        ("Pacific Avenue", 4),
-        ("North Carolina Avenue", 4),
-        ("Pennsylvania Avenue", 4),
+    "Benz": [
+        ("Mercedes-AMG GT Black Series", 4),
+        ("Mercedes-Benz G63 AMG", 4),
+        ("Mercedes-Maybach S 680", 4),
     ],
-    "Dark Blue": [
-        ("Park Place", 4),
-        ("Boardwalk", 4),
+    "Lamborghini": [
+        ("Lamborghini Sesto Elemento", 4),
+        ("Lamborghini Aventador SVJ", 4),
     ],
-    "Railroads": [
-        ("Reading Railroad", 2),
-        ("Pennsylvania Railroad", 2),
-        ("B&O Railroad", 2),
-        ("Short Line", 2),
+    "McLaren": [
+        ("McLaren F1", 2),
+        ("McLaren P1", 2),
+        ("McLaren 720S", 2),
+        ("McLaren 765LT", 2),
     ],
-    "Utilities": [
-        ("Electric Company", 2),
-        ("Water Works", 2),
+    "Bugatti": [
+        ("Bugatti Veyron 16.4", 2),
+        ("Bugatti Chiron Super Sport", 2),
     ],
 }
 
 PROPERTY_WILD_DEFINITIONS = [
     {
-        "name": "Wild Brown/Light Blue",
-        "colors": ("Brown", "Light Blue"),
+        "name": "Wild Lexus/Tesla",
+        "colors": ("Lexus", "Tesla"),
         "value": 4,
         "count": 1,
     },
     {
-        "name": "Wild Pink/Orange",
-        "colors": ("Pink", "Orange"),
+        "name": "Wild Rivian/Chevelote",
+        "colors": ("Rivian", "Chevelote"),
         "value": 2,
         "count": 2,
     },
     {
-        "name": "Wild Red/Yellow",
-        "colors": ("Red", "Yellow"),
+        "name": "Wild Nissan/Ford",
+        "colors": ("Nissan", "Ford"),
         "value": 3,
         "count": 2,
     },
     {
-        "name": "Wild Green/Dark Blue",
-        "colors": ("Green", "Dark Blue"),
+        "name": "Wild Benz/Lamborghini",
+        "colors": ("Benz", "Lamborghini"),
         "value": 4,
         "count": 2,
     },
     {
-        "name": "Wild Light Blue/Railroad",
-        "colors": ("Light Blue", "Railroads"),
+        "name": "Wild Tesla/McLaren",
+        "colors": ("Tesla", "McLaren"),
         "value": 4,
         "count": 1,
     },
     {
-        "name": "Wild Railroad",
-        "colors": ("Railroads",),
+        "name": "Wild McLaren",
+        "colors": ("McLaren",),
         "value": 2,
         "count": 2,
     },
     {
-        "name": "Wild Railroad/Utility",
-        "colors": ("Railroads", "Utilities"),
+        "name": "Wild McLaren/Bugatti",
+        "colors": ("McLaren", "Bugatti"),
         "value": 2,
         "count": 1,
     },
     {
-        "name": "Wild Utility",
-        "colors": ("Utilities",),
+        "name": "Wild Bugatti",
+        "colors": ("Bugatti",),
         "value": 2,
         "count": 1,
     },
     {
-        "name": "Property Wild (Any Color)",
+        "name": "Wild Garage Pass (Any Collection)",
         "colors": tuple(ALL_PROPERTY_COLORS),
         "value": 0,
         "count": 2,
@@ -136,25 +136,25 @@ MONEY_CARD_DEFINITIONS = {
 }
 
 ACTION_CARD_DEFINITIONS = {
-    "Deal Breaker": {"count": 2, "value": 5, "type": "action"},
-    "Sly Deal": {"count": 3, "value": 3, "type": "action"},
-    "Forced Deal": {"count": 4, "value": 3, "type": "action"},
-    "Debt Collector": {"count": 3, "value": 3, "type": "action"},
-    "It’s My Birthday": {"count": 3, "value": 2, "type": "action"},
-    "Pass Go": {"count": 10, "value": 1, "type": "action"},
-    "Double the Rent": {"count": 2, "value": 1, "type": "action"},
-    "House": {"count": 3, "value": 3, "type": "action"},
-    "Hotel": {"count": 2, "value": 4, "type": "action"},
-    "Just Say No": {"count": 3, "value": 4, "type": "action"},
+    "Garage Takeover": {"count": 2, "value": 5, "type": "action"},
+    "Sneak Swap": {"count": 3, "value": 3, "type": "action"},
+    "Tow Trade": {"count": 4, "value": 3, "type": "action"},
+    "Repo Notice": {"count": 3, "value": 3, "type": "action"},
+    "Track Day Fees": {"count": 3, "value": 2, "type": "action"},
+    "Green Light": {"count": 10, "value": 1, "type": "action"},
+    "Turbo Charge": {"count": 2, "value": 1, "type": "action"},
+    "Garage Upgrade": {"count": 3, "value": 3, "type": "action"},
+    "Luxury Showroom": {"count": 2, "value": 4, "type": "action"},
+    "Cut the Engine": {"count": 3, "value": 4, "type": "action"},
 }
 
 RENT_CARD_DEFINITIONS = {
-    "Rent Brown/Light Blue": {"count": 2, "value": 1, "type": "rent"},
-    "Rent Pink/Orange": {"count": 2, "value": 1, "type": "rent"},
-    "Rent Red/Yellow": {"count": 2, "value": 1, "type": "rent"},
-    "Rent Green/Dark Blue": {"count": 2, "value": 1, "type": "rent"},
-    "Rent Railroad/Utility": {"count": 2, "value": 1, "type": "rent"},
-    "Rent Wild (Any Color)": {"count": 3, "value": 3, "type": "rent"},
+    "Rent Lexus/Tesla": {"count": 2, "value": 1, "type": "rent"},
+    "Rent Rivian/Chevelote": {"count": 2, "value": 1, "type": "rent"},
+    "Rent Nissan/Ford": {"count": 2, "value": 1, "type": "rent"},
+    "Rent Benz/Lamborghini": {"count": 2, "value": 1, "type": "rent"},
+    "Rent McLaren/Bugatti": {"count": 2, "value": 1, "type": "rent"},
+    "Rent Wild (Any Collection)": {"count": 3, "value": 3, "type": "rent"},
 }
 
 
