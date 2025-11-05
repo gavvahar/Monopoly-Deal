@@ -16,15 +16,18 @@
     >
       {% if current_player.hand %} {% for card in current_player.hand %}
       <div class="card-container">
-        <div class="card card-{{ card.card_type }}">
-          <div class="card-header">{{ card.card_type | title }}</div>
-          <div class="card-name">{{ card.name }}</div>
-          <div class="card-value">{{ card.value if card.value else '💎' }}</div>
-          <div class="card-type-icon">
-            {% if card.card_type == 'money' %}💰 {% elif card.card_type ==
-            'property' %}🏠 {% elif card.card_type == 'action' %}⚡ {% elif
-            card.card_type == 'wild' %}🌟 {% elif card.card_type == 'rent' %}💸
+          <div class="card card-{{ card.card_type }}">
+            <div class="card-header">{{ card.card_type | title }}</div>
+            <div class="card-name">{{ card.name }}</div>
+            <div class="card-value">{{ card.value if card.value else '💎' }}</div>
+            {% if card.description %}
+            <div class="card-description">{{ card.description }}</div>
             {% endif %}
+            <div class="card-type-icon">
+              {% if card.card_type == 'money' %}💰 {% elif card.card_type ==
+              'property' %}🏠 {% elif card.card_type == 'action' %}⚡ {% elif
+              card.card_type == 'wild' %}🌟 {% elif card.card_type == 'rent' %}💸
+              {% endif %}
           </div>
         </div>
         <form method="post" class="inline-form">
@@ -58,6 +61,9 @@
         <div class="card-header">{{ card.card_type | title }}</div>
         <div class="card-name">{{ card.name }}</div>
         <div class="card-value">{{ card.value if card.value else '💎' }}</div>
+        {% if card.description %}
+        <div class="card-description">{{ card.description }}</div>
+        {% endif %}
         <div class="card-type-icon">🏠</div>
       </div>
       {% endfor %} {% else %}

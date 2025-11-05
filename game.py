@@ -1,20 +1,32 @@
 """
-Game logic for Monopoly Deal (functional, no classes).
+Game logic for the car-themed deck (functional, no classes).
 """
 
 import random
+import cards
 
 # ---------------- Card / Deck ----------------
 
 
 def create_deck():
-    """Create a shuffled deck with enough cards for multiplayer games."""
-    # Create enough cards for up to 5 players (5 players x 5 cards = 25 minimum)
-    deck = [{"name": f"Property {i}", "card_type": "property"} for i in range(1, 21)]
-    deck += [{"name": f"Money {i}", "card_type": "money"} for i in range(1, 21)]
-    deck += [{"name": f"Action {i}", "card_type": "action"} for i in range(1, 11)]
-    random.shuffle(deck)
-    return deck
+    """Create a shuffled deck using the canonical car-themed cards."""
+    raw_deck = cards.shuffle_deck()
+    normalized = []
+    for card in raw_deck:
+        normalized_card = {
+            "name": card["name"],
+            "card_type": card["type"],
+            "value": card.get("value", 0),
+        }
+        if "description" in card:
+            normalized_card["description"] = card["description"]
+        if "color" in card:
+            normalized_card["color"] = card["color"]
+        if "colors" in card:
+            normalized_card["colors"] = list(card["colors"])
+        normalized.append(normalized_card)
+    random.shuffle(normalized)
+    return normalized
 
 
 # ---------------- State Management ----------------
@@ -61,15 +73,22 @@ def play_card(state, card_idx):
     if card_idx < 0 or card_idx >= len(hand):
         return "Invalid card index."
     card = hand.pop(card_idx)
-    if card["card_type"] == "property":
+    card_type = card["card_type"]
+    if card_type == "property":
         player["properties"].append(card)
         if len(player["properties"]) >= 3:
             state["started"] = False
             return f"{player['name']} wins!"
         return f"{player['name']} played {card['name']} as property."
-    if card["card_type"] == "money":
-        return f"{player['name']} played {card['name']} as money."
-    return "Unknown card type."
+    if card_type == "money":
+        return f"{player['name']} banked {card['name']}."
+    if card_type == "action":
+        return f"{player['name']} played action card {card['name']}."
+    if card_type == "wild":
+        return f"{player['name']} placed wild card {card['name']}."
+    if card_type == "rent":
+        return f"{player['name']} prepared rent card {card['name']}."
+    return f"{player['name']} played {card['name']}."
 
 
 def next_turn(state):

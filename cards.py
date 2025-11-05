@@ -136,19 +136,84 @@ MONEY_CARD_DEFINITIONS = {
 }
 
 ACTION_CARD_DEFINITIONS = {
-    "Garage Takeover": {"count": 2, "value": 5, "type": "action"},
-    "Sneak Swap": {"count": 2, "value": 3, "type": "action"},
-    "Tow Trade": {"count": 4, "value": 3, "type": "action"},
-    "Repo Notice": {"count": 3, "value": 3, "type": "action"},
-    "Track Day Fees": {"count": 3, "value": 2, "type": "action"},
-    "Green Light": {"count": 8, "value": 1, "type": "action"},
-    "Turbo Charge": {"count": 2, "value": 1, "type": "action"},
-    "Garage Upgrade": {"count": 3, "value": 3, "type": "action"},
-    "Luxury Showroom": {"count": 2, "value": 4, "type": "action"},
-    "Cut the Engine": {"count": 3, "value": 4, "type": "action"},
-    "Pit Crew Bonus": {"count": 1, "value": 2, "type": "action"},
-    "Midnight Run": {"count": 1, "value": 3, "type": "action"},
-    "Collector's Auction": {"count": 1, "value": 4, "type": "action"},
+    "Garage Takeover": {
+        "count": 2,
+        "value": 5,
+        "type": "action",
+        "description": "Steal an opponent's complete collection.",
+    },
+    "Sneak Swap": {
+        "count": 2,
+        "value": 3,
+        "type": "action",
+        "description": "Swap one car card with another player.",
+    },
+    "Tow Trade": {
+        "count": 4,
+        "value": 3,
+        "type": "action",
+        "description": "Force a trade between one of your cars and theirs.",
+    },
+    "Repo Notice": {
+        "count": 3,
+        "value": 3,
+        "type": "action",
+        "description": "Collect 3M from a player of your choice.",
+    },
+    "Track Day Fees": {
+        "count": 3,
+        "value": 2,
+        "type": "action",
+        "description": "All rivals must pay you 2M.",
+    },
+    "Green Light": {
+        "count": 8,
+        "value": 1,
+        "type": "action",
+        "description": "Draw two cards from the deck.",
+    },
+    "Turbo Charge": {
+        "count": 2,
+        "value": 1,
+        "type": "action",
+        "description": "Double the next rent you demand.",
+    },
+    "Garage Upgrade": {
+        "count": 3,
+        "value": 3,
+        "type": "action",
+        "description": "Add a house to a complete collection (+3 rent).",
+    },
+    "Luxury Showroom": {
+        "count": 2,
+        "value": 4,
+        "type": "action",
+        "description": "Add a hotel to a housed set (+4 rent).",
+    },
+    "Cut the Engine": {
+        "count": 3,
+        "value": 4,
+        "type": "action",
+        "description": "Cancel the last action played on you.",
+    },
+    "Pit Crew Bonus": {
+        "count": 1,
+        "value": 2,
+        "type": "action",
+        "description": "Draw one card and gain an extra action this turn.",
+    },
+    "Midnight Run": {
+        "count": 1,
+        "value": 3,
+        "type": "action",
+        "description": "Take another full turn after this one.",
+    },
+    "Collector's Auction": {
+        "count": 1,
+        "value": 4,
+        "type": "action",
+        "description": "Claim any single car card from each opponent.",
+    },
 }
 
 RENT_CARD_DEFINITIONS = {
