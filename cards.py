@@ -137,15 +137,18 @@ MONEY_CARD_DEFINITIONS = {
 
 ACTION_CARD_DEFINITIONS = {
     "Garage Takeover": {"count": 2, "value": 5, "type": "action"},
-    "Sneak Swap": {"count": 3, "value": 3, "type": "action"},
+    "Sneak Swap": {"count": 2, "value": 3, "type": "action"},
     "Tow Trade": {"count": 4, "value": 3, "type": "action"},
     "Repo Notice": {"count": 3, "value": 3, "type": "action"},
     "Track Day Fees": {"count": 3, "value": 2, "type": "action"},
-    "Green Light": {"count": 10, "value": 1, "type": "action"},
+    "Green Light": {"count": 8, "value": 1, "type": "action"},
     "Turbo Charge": {"count": 2, "value": 1, "type": "action"},
     "Garage Upgrade": {"count": 3, "value": 3, "type": "action"},
     "Luxury Showroom": {"count": 2, "value": 4, "type": "action"},
     "Cut the Engine": {"count": 3, "value": 4, "type": "action"},
+    "Pit Crew Bonus": {"count": 1, "value": 2, "type": "action"},
+    "Midnight Run": {"count": 1, "value": 3, "type": "action"},
+    "Collector's Auction": {"count": 1, "value": 4, "type": "action"},
 }
 
 RENT_CARD_DEFINITIONS = {

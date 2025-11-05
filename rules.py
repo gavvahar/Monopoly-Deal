@@ -63,6 +63,9 @@ def get_action_kinds() -> Dict[str, str]:
         "Tow Trade": "single",
         "Track Day Fees": "all",
         "Garage Takeover": "steal_set",
+        "Pit Crew Bonus": "all",
+        "Midnight Run": "single",
+        "Collector's Auction": "steal_set",
         # rent cards marked separately via get_rent_card_colors()
     }
 
