@@ -545,7 +545,9 @@ async def admin_bypass_post(
 
 @app.get("/admin-login", response_class=HTMLResponse)
 async def admin_login_get(request: Request):
-    """Admin login page."""
+    """Admin login page (local profile only)."""
+    if sso_enabled():
+        return RedirectResponse(url="/login", status_code=303)
     return templates.TemplateResponse("admin_login.html", {"request": request})
 
 
@@ -555,7 +557,9 @@ async def admin_login_post(
     username: Annotated[str, Form(...)],
     password: Annotated[str, Form(...)],
 ):
-    """Handle admin login using credentials from .env."""
+    """Handle admin login using credentials from .env (local profile only)."""
+    if sso_enabled():
+        return RedirectResponse(url="/login", status_code=303)
     admin_user = os.getenv("ADMIN_USER")
     admin_pass = os.getenv("ADMIN_PASSWORD")
     if username == admin_user and password == admin_pass:
@@ -569,8 +573,9 @@ async def admin_login_post(
 
 @app.get("/admin-2fa-setup", response_class=HTMLResponse)
 async def admin_2fa_setup(request: Request):
-    """Admin 2FA setup page."""
-    # Only show this if admin is logged in
+    """Admin 2FA setup page (local profile only)."""
+    if sso_enabled():
+        return RedirectResponse(url="/login", status_code=303)
     if not get_current_admin(request):
         return RedirectResponse(url="/admin-login", status_code=303)
 
@@ -586,6 +591,8 @@ async def admin_2fa_setup(request: Request):
 @app.get("/admin-logout")
 async def admin_logout(request: Request):
     """Log out the current admin."""
+    if sso_enabled():
+        return RedirectResponse(url="/logout", status_code=303)
     request.session.pop("admin_username", None)
     return RedirectResponse(url="/admin-login", status_code=303)
 
@@ -793,7 +800,8 @@ async def play_fallback_post(request: Request):
 async def admin_get(request: Request):
     """Handle GET request for admin page."""
     if not get_current_admin(request):
-        return RedirectResponse(url="/admin-login", status_code=303)
+        redirect = "/login" if sso_enabled() else "/admin-login"
+        return RedirectResponse(url=redirect, status_code=303)
     try:
         db_users = set(get_usernames())
     except Exception as e:
@@ -812,7 +820,8 @@ async def admin_post(
 ):
     """Handle POST request for admin page."""
     if not get_current_admin(request):
-        return RedirectResponse(url="/admin-login", status_code=303)
+        redirect = "/login" if sso_enabled() else "/admin-login"
+        return RedirectResponse(url=redirect, status_code=303)
     message = ""
     try:
         db_users = set(get_usernames())
