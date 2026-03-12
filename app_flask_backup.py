@@ -22,7 +22,7 @@ def initialize():
     Load environment variables and return the directory path
     of the current file.
     """
-    load_dotenv(path.join(path.dirname(__file__), "./.envs/nihar.env"))
+    load_dotenv(path.join(path.dirname(__file__), ".env"))
     return path.dirname(path.realpath(__file__))
 
 

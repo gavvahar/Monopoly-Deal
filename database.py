@@ -11,7 +11,6 @@ import psycopg2
 from typing import List, Tuple, Optional
 from psycopg2 import OperationalError
 
-
 # Global database configuration
 _db_config = {
     "db_name": None,
@@ -243,6 +242,17 @@ def create_admin_user(username: str, password: str) -> bool:
     query = "INSERT INTO admins (username, password) VALUES (%s, %s);"
     execute_query(query, (username, password))
     return True
+
+
+def validate_user_login(username: str, password: str) -> bool:
+    """
+    Validate regular user login credentials.
+    """
+    query = "SELECT password FROM users WHERE username = %s;"
+    results = execute_query(query, (username,), fetch=True) or []
+    if not results:
+        return False
+    return results[0][0] == password
 
 
 def validate_admin_login(username: str, password: str) -> bool:

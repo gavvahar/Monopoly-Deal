@@ -20,24 +20,40 @@ from database import (
     user_exists,
     create_user,
     get_all_users,
+    validate_user_login,
     create_admin_user,
     admin_exists,
 )
-import os, pytz, pyotp, qrcode, io, base64
+import os, secrets, pytz, pyotp, qrcode, io, base64
+import httpx
 
 
 def initialize():
     """
     Load environment variables and return the directory path
     of the current file.
-    Also ensures admin credentials are present in the admin table.
+    Also ensures admin credentials are present in the admin table,
+    and seeds local users when SSO is disabled.
     """
-    load_dotenv(path.join(path.dirname(__file__), "./.envs/nihar.env"))
+    load_dotenv(path.join(path.dirname(__file__), ".env"))
     # Insert admin creds into admin table if not present
     admin_user = os.getenv("ADMIN_USER")
     admin_pass = os.getenv("ADMIN_PASSWORD")
     if admin_user and admin_pass and not admin_exists(admin_user):
         create_admin_user(admin_user, admin_pass)
+    # Seed local users (local profile only — SSO disabled)
+    if os.getenv("SSO_ENABLED", "false").lower() != "true":
+        local_user = os.getenv("LOCAL_USER")
+        local_user_pass = os.getenv("LOCAL_USER_PASSWORD")
+        local_admin = os.getenv("LOCAL_ADMIN_USER")
+        local_admin_pass = os.getenv("LOCAL_ADMIN_PASSWORD")
+        if local_user and local_user_pass and not user_exists(local_user):
+            create_user(local_user, local_user_pass)
+        if local_admin and local_admin_pass:
+            if not user_exists(local_admin):
+                create_user(local_admin, local_admin_pass)
+            if not admin_exists(local_admin):
+                create_admin_user(local_admin, local_admin_pass)
     return path.dirname(path.realpath(__file__))
 
 
@@ -290,23 +306,21 @@ def check_business_hours_restriction(request: Request, action_type="host"):
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     """Route for home page, redirects to login."""
-    # Check business hours restriction for hosting (login needed to create sessions)
-    restriction_response = check_business_hours_restriction(request, "host")
-    if restriction_response:
-        return restriction_response
-
     return await login_get(request)
+
+
+def sso_enabled() -> bool:
+    return os.getenv("SSO_ENABLED", "false").lower() == "true"
 
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_get(request: Request):
-    """Handle GET request for login page."""
-    # Check business hours restriction for hosting (login needed to create sessions)
-    restriction_response = check_business_hours_restriction(request, "host")
-    if restriction_response:
-        return restriction_response
-
-    return templates.TemplateResponse("login.html", {"request": request})
+    """Show login page — SSO button or username/password form depending on profile."""
+    if request.session.get("username"):
+        return RedirectResponse(url="/lobby", status_code=303)
+    return templates.TemplateResponse(
+        "login.html", {"request": request, "sso_enabled": sso_enabled()}
+    )
 
 
 @app.post("/login")
@@ -315,29 +329,166 @@ async def login_post(
     username: Annotated[str, Form(...)],
     password: Annotated[str, Form(...)],
 ):
-    """Handle user login and redirect to lobby."""
-    # Check business hours restriction for hosting (login needed to create sessions)
-    restriction_response = check_business_hours_restriction(request, "host")
-    if restriction_response:
-        return restriction_response
+    """Handle local username/password login (non-SSO profiles only)."""
+    if sso_enabled():
+        return RedirectResponse(url="/login", status_code=303)
 
-    db_user = os.getenv("POSTGRES_USER", "nihar")
-    db_pass = os.getenv("POSTGRES_PASSWORD")
-
-    if username == db_user and password == db_pass:
+    if validate_user_login(username, password):
         request.session["username"] = username
         return RedirectResponse(url="/lobby", status_code=303)
 
-    error_text = "Invalid username or password."
     return templates.TemplateResponse(
-        "login.html", {"request": request, "error": error_text}
+        "login.html",
+        {
+            "request": request,
+            "sso_enabled": False,
+            "error": "Invalid username or password.",
+        },
     )
+
+
+@app.get("/login/sso")
+async def login_sso(request: Request):
+    """Redirect user to Authentik for authentication (SSO profiles only)."""
+    if not sso_enabled():
+        return RedirectResponse(url="/login", status_code=303)
+
+    authentik_url = os.getenv("AUTHENTIK_URL")
+    client_id = os.getenv("AUTHENTIK_CLIENT_ID")
+    redirect_uri = os.getenv("AUTHENTIK_REDIRECT_URI")
+
+    state = secrets.token_urlsafe(32)
+    request.session["oauth_state"] = state
+
+    params = (
+        f"?response_type=code"
+        f"&client_id={client_id}"
+        f"&redirect_uri={redirect_uri}"
+        f"&scope=openid+profile+email"
+        f"&state={state}"
+    )
+    return RedirectResponse(url=f"{authentik_url}/application/o/authorize/{params}")
+
+
+@app.get("/auth/callback")
+async def auth_callback(
+    request: Request, code: str = None, state: str = None, error: str = None
+):
+    """Handle OAuth2 callback from Authentik (SSO profiles only)."""
+    if not sso_enabled():
+        return RedirectResponse(url="/login", status_code=303)
+
+    if error:
+        return templates.TemplateResponse(
+            "login.html",
+            {
+                "request": request,
+                "sso_enabled": True,
+                "error": f"Login failed: {error}",
+            },
+        )
+
+    if not code or state != request.session.get("oauth_state"):
+        return templates.TemplateResponse(
+            "login.html",
+            {
+                "request": request,
+                "sso_enabled": True,
+                "error": "Invalid OAuth state. Please try again.",
+            },
+        )
+
+    request.session.pop("oauth_state", None)
+
+    authentik_url = os.getenv("AUTHENTIK_URL")
+    client_id = os.getenv("AUTHENTIK_CLIENT_ID")
+    client_secret = os.getenv("AUTHENTIK_CLIENT_SECRET")
+    redirect_uri = os.getenv("AUTHENTIK_REDIRECT_URI")
+
+    async with httpx.AsyncClient() as client:
+        token_response = await client.post(
+            f"{authentik_url}/application/o/token/",
+            data={
+                "grant_type": "authorization_code",
+                "code": code,
+                "redirect_uri": redirect_uri,
+                "client_id": client_id,
+                "client_secret": client_secret,
+            },
+        )
+
+    if token_response.status_code != 200:
+        return templates.TemplateResponse(
+            "login.html",
+            {
+                "request": request,
+                "sso_enabled": True,
+                "error": "Failed to retrieve token from Authentik.",
+            },
+        )
+
+    token_data = token_response.json()
+    access_token = token_data.get("access_token")
+
+    async with httpx.AsyncClient() as client:
+        userinfo_response = await client.get(
+            f"{authentik_url}/application/o/userinfo/",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+
+    if userinfo_response.status_code != 200:
+        return templates.TemplateResponse(
+            "login.html",
+            {
+                "request": request,
+                "sso_enabled": True,
+                "error": "Failed to retrieve user info from Authentik.",
+            },
+        )
+
+    user_info = userinfo_response.json()
+    username = user_info.get("preferred_username") or user_info.get("email")
+    groups = user_info.get("groups", [])
+
+    request.session["username"] = username
+
+    admin_group = os.getenv("AUTHENTIK_ADMIN_GROUP", "")
+    user_group = os.getenv("AUTHENTIK_USER_GROUP", "")
+
+    in_admin_group = admin_group and admin_group in groups
+    in_user_group = user_group and user_group in groups
+
+    if not in_admin_group and not in_user_group:
+        return templates.TemplateResponse(
+            "login.html",
+            {
+                "request": request,
+                "sso_enabled": True,
+                "error": "You do not have access to this application.",
+            },
+        )
+
+    if in_admin_group:
+        request.session["admin_username"] = username
+
+    return RedirectResponse(url="/lobby", status_code=303)
 
 
 @app.get("/logout")
 async def logout(request: Request):
     """Log out the current user."""
-    request.session.pop("username", None)
+    request.session.clear()
+    if sso_enabled():
+        authentik_url = os.getenv("AUTHENTIK_URL")
+        app_slug = os.getenv("AUTHENTIK_APP_SLUG")
+        redirect_uri = (
+            os.getenv("AUTHENTIK_REDIRECT_URI", "").rsplit("/auth/callback", 1)[0]
+            + "/login"
+        )
+        return RedirectResponse(
+            url=f"{authentik_url}/application/o/{app_slug}/end-session/?redirect_to={redirect_uri}",
+            status_code=303,
+        )
     return RedirectResponse(url="/login", status_code=303)
 
 
@@ -394,7 +545,9 @@ async def admin_bypass_post(
 
 @app.get("/admin-login", response_class=HTMLResponse)
 async def admin_login_get(request: Request):
-    """Admin login page."""
+    """Admin login page (local profile only)."""
+    if sso_enabled():
+        return RedirectResponse(url="/login", status_code=303)
     return templates.TemplateResponse("admin_login.html", {"request": request})
 
 
@@ -404,7 +557,9 @@ async def admin_login_post(
     username: Annotated[str, Form(...)],
     password: Annotated[str, Form(...)],
 ):
-    """Handle admin login using credentials from .env."""
+    """Handle admin login using credentials from .env (local profile only)."""
+    if sso_enabled():
+        return RedirectResponse(url="/login", status_code=303)
     admin_user = os.getenv("ADMIN_USER")
     admin_pass = os.getenv("ADMIN_PASSWORD")
     if username == admin_user and password == admin_pass:
@@ -418,8 +573,9 @@ async def admin_login_post(
 
 @app.get("/admin-2fa-setup", response_class=HTMLResponse)
 async def admin_2fa_setup(request: Request):
-    """Admin 2FA setup page."""
-    # Only show this if admin is logged in
+    """Admin 2FA setup page (local profile only)."""
+    if sso_enabled():
+        return RedirectResponse(url="/login", status_code=303)
     if not get_current_admin(request):
         return RedirectResponse(url="/admin-login", status_code=303)
 
@@ -435,6 +591,8 @@ async def admin_2fa_setup(request: Request):
 @app.get("/admin-logout")
 async def admin_logout(request: Request):
     """Log out the current admin."""
+    if sso_enabled():
+        return RedirectResponse(url="/logout", status_code=303)
     request.session.pop("admin_username", None)
     return RedirectResponse(url="/admin-login", status_code=303)
 
@@ -447,11 +605,6 @@ async def lobby_get(request: Request):
     if not username:
         return RedirectResponse(url="/login", status_code=303)
 
-    # Check business hours restriction for hosting (lobby needed to create sessions)
-    restriction_response = check_business_hours_restriction(request, "host")
-    if restriction_response:
-        return restriction_response
-
     # Check if user is already in a session
     session_code, session = get_session_for_user(username)
 
@@ -460,6 +613,7 @@ async def lobby_get(request: Request):
         {
             "request": request,
             "username": username,
+            "is_admin": bool(get_current_admin(request)),
             "current_session": session_code,
             "current_session_data": session,
             "message": "",
@@ -477,18 +631,6 @@ async def lobby_post(
     username = get_current_user(request)
     if not username:
         return RedirectResponse(url="/login", status_code=303)
-
-    # Apply business hours restrictions based on action type
-    if action in ["create_game", "start_game"]:
-        # These actions require hosting permissions - check for business hours
-        restriction_response = check_business_hours_restriction(request, "host")
-        if restriction_response:
-            return restriction_response
-    elif action in ["join_game", "leave_game"]:
-        # These actions are for joining existing sessions - allow during business hours
-        restriction_response = check_business_hours_restriction(request, "join")
-        if restriction_response:
-            return restriction_response
 
     message = ""
     current_session_code, current_session = get_session_for_user(username)
@@ -543,6 +685,7 @@ async def lobby_post(
         {
             "request": request,
             "username": username,
+            "is_admin": bool(get_current_admin(request)),
             "current_session": current_session_code,
             "current_session_data": current_session,
             "message": message,
@@ -553,11 +696,6 @@ async def lobby_post(
 @app.get("/play/{session_code}", response_class=HTMLResponse)
 async def play_get(request: Request, session_code: str):
     """Handle GET request for play page with session code."""
-    # Allow joining existing game sessions during business hours
-    restriction_response = check_business_hours_restriction(request, "join")
-    if restriction_response:
-        return restriction_response
-
     username = get_current_user(request)
     if not username:
         return RedirectResponse(url="/login", status_code=303)
@@ -597,11 +735,6 @@ async def play_post(
     card_idx: Annotated[Optional[int], Form()] = None,
 ):
     """Handle POST request for game actions with session code."""
-    # Allow playing in existing game sessions during business hours
-    restriction_response = check_business_hours_restriction(request, "join")
-    if restriction_response:
-        return restriction_response
-
     username = get_current_user(request)
     if not username:
         return RedirectResponse(url="/login", status_code=303)
@@ -669,7 +802,8 @@ async def play_fallback_post(request: Request):
 async def admin_get(request: Request):
     """Handle GET request for admin page."""
     if not get_current_admin(request):
-        return RedirectResponse(url="/admin-login", status_code=303)
+        redirect = "/login" if sso_enabled() else "/admin-login"
+        return RedirectResponse(url=redirect, status_code=303)
     try:
         db_users = set(get_usernames())
     except Exception as e:
@@ -688,7 +822,8 @@ async def admin_post(
 ):
     """Handle POST request for admin page."""
     if not get_current_admin(request):
-        return RedirectResponse(url="/admin-login", status_code=303)
+        redirect = "/login" if sso_enabled() else "/admin-login"
+        return RedirectResponse(url=redirect, status_code=303)
     message = ""
     try:
         db_users = set(get_usernames())
