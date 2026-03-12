@@ -5,7 +5,25 @@ x-environment: &environment
   POSTGRES_DB: ${POSTGRES_DB}
   PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
   PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
-  WEB_PORT: ${WEB_PORT:-8001}
+
+x-web-base: &web-base
+  build:
+    context: .
+    dockerfile: Docker/Dockerfile
+  pull_policy: build
+  container_name: monopoly_web
+  networks:
+    monopoly_network:
+      ipv4_address: 172.20.0.11
+  environment:
+    <<: *environment
+  volumes:
+    - .:/app
+  depends_on:
+    db:
+      condition: service_healthy
+    database_service:
+      condition: service_completed_successfully
 
 networks:
   monopoly_network:
@@ -15,59 +33,10 @@ networks:
         - subnet: 172.20.0.0/16
 
 services:
-  tox:
-    build:
-      context: .
-      dockerfile: Docker/Dockerfile
-    working_dir: /app
-    depends_on:
-      database_service:
-        condition: service_completed_successfully
-    command: tox
-
-
-  database_service:
-    build:
-      context: .
-      dockerfile: Docker/Dockerfile.database
-    pull_policy: build
-    container_name: monopoly_database_service
-    networks:
-      monopoly_network:
-        ipv4_address: 172.20.0.10
-    environment:
-      <<: *environment
-    depends_on:
-      db:
-        condition: service_healthy
-    volumes:
-      - .:/app
-    working_dir: /app
-
-  web:
-    build:
-      context: .
-      dockerfile: Docker/Dockerfile
-    pull_policy: build
-    container_name: monopoly_web
-    ports:
-      - "${WEB_PORT:-8001}:8000"
-    networks:
-      monopoly_network:
-        ipv4_address: 172.20.0.11
-    environment:
-      <<: *environment
-    volumes:
-      - .:/app
-    depends_on:
-      db:
-        condition: service_healthy
-      database_service:
-        condition: service_completed_successfully
-
   db:
     image: postgres:16
     container_name: monopoly_postgres
+    profiles: [prod, dev, local]
     environment:
       <<: *environment
     ports:
@@ -84,9 +53,58 @@ services:
       retries: 5
       start_period: 10s
 
+  database_service:
+    build:
+      context: .
+      dockerfile: Docker/Dockerfile.database
+    pull_policy: build
+    profiles: [prod, dev, local]
+    container_name: monopoly_database_service
+    networks:
+      monopoly_network:
+        ipv4_address: 172.20.0.10
+    environment:
+      <<: *environment
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    working_dir: /app
+
+  web-prod:
+    <<: *web-base
+    profiles: [prod]
+    ports:
+      - "${PROD_WEB_PORT:-8001}:8000"
+
+  web-dev:
+    <<: *web-base
+    profiles: [dev]
+    ports:
+      - "${DEV_WEB_PORT:-8002}:8000"
+
+  web-local:
+    <<: *web-base
+    profiles: [local]
+    ports:
+      - "${LOCAL_WEB_PORT:-8003}:8000"
+
+  tox:
+    build:
+      context: .
+      dockerfile: Docker/Dockerfile
+    profiles: [dev, local]
+    working_dir: /app
+    depends_on:
+      database_service:
+        condition: service_completed_successfully
+    command: tox
+
   pgadmin:
     image: dpage/pgadmin4:9.6
     container_name: monopoly_pgadmin
+    profiles: [local]
     environment:
       <<: *environment
     ports:
