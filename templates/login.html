@@ -9,7 +9,7 @@
   <body>
     <!-- Mobile header for mobile screens -->
     <div class="mobile-header">
-      <a href="/admin" class="admin-btn">Admin</a>
+      {% if not sso_enabled %}<a href="/admin" class="admin-btn">Admin</a>{% endif %}
       <select
         id="theme-toggle"
         class="theme-toggle"
@@ -22,7 +22,7 @@
       </select>
     </div>
     <!-- Original desktop positioned buttons -->
-    <a href="/admin" class="admin-btn">Admin</a>
+    {% if not sso_enabled %}<a href="/admin" class="admin-btn">Admin</a>{% endif %}
     <div class="center-container">
       <h1 class="game-title">Monopoly Deal</h1>
       <div class="login-box">
