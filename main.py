@@ -23,7 +23,8 @@ from database import (
     create_admin_user,
     admin_exists,
 )
-import os, pytz, pyotp, qrcode, io, base64
+import os, secrets, pytz, pyotp, qrcode, io, base64
+import httpx
 
 
 def initialize():
@@ -32,7 +33,7 @@ def initialize():
     of the current file.
     Also ensures admin credentials are present in the admin table.
     """
-    load_dotenv(path.join(path.dirname(__file__), "./.envs/nihar.env"))
+    load_dotenv(path.join(path.dirname(__file__), ".env"))
     # Insert admin creds into admin table if not present
     admin_user = os.getenv("ADMIN_USER")
     admin_pass = os.getenv("ADMIN_PASSWORD")
@@ -290,55 +291,105 @@ def check_business_hours_restriction(request: Request, action_type="host"):
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     """Route for home page, redirects to login."""
-    # Check business hours restriction for hosting (login needed to create sessions)
-    restriction_response = check_business_hours_restriction(request, "host")
-    if restriction_response:
-        return restriction_response
-
     return await login_get(request)
 
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_get(request: Request):
-    """Handle GET request for login page."""
-    # Check business hours restriction for hosting (login needed to create sessions)
-    restriction_response = check_business_hours_restriction(request, "host")
-    if restriction_response:
-        return restriction_response
-
+    """Show login page with SSO button."""
+    if request.session.get("username"):
+        return RedirectResponse(url="/lobby", status_code=303)
     return templates.TemplateResponse("login.html", {"request": request})
 
 
-@app.post("/login")
-async def login_post(
-    request: Request,
-    username: Annotated[str, Form(...)],
-    password: Annotated[str, Form(...)],
-):
-    """Handle user login and redirect to lobby."""
-    # Check business hours restriction for hosting (login needed to create sessions)
-    restriction_response = check_business_hours_restriction(request, "host")
-    if restriction_response:
-        return restriction_response
+@app.get("/login/sso")
+async def login_sso(request: Request):
+    """Redirect user to Authentik for authentication."""
+    authentik_url = os.getenv("AUTHENTIK_URL")
+    client_id = os.getenv("AUTHENTIK_CLIENT_ID")
+    redirect_uri = os.getenv("AUTHENTIK_REDIRECT_URI")
 
-    db_user = os.getenv("POSTGRES_USER", "nihar")
-    db_pass = os.getenv("POSTGRES_PASSWORD")
+    state = secrets.token_urlsafe(32)
+    request.session["oauth_state"] = state
 
-    if username == db_user and password == db_pass:
-        request.session["username"] = username
-        return RedirectResponse(url="/lobby", status_code=303)
-
-    error_text = "Invalid username or password."
-    return templates.TemplateResponse(
-        "login.html", {"request": request, "error": error_text}
+    params = (
+        f"?response_type=code"
+        f"&client_id={client_id}"
+        f"&redirect_uri={redirect_uri}"
+        f"&scope=openid+profile+email"
+        f"&state={state}"
     )
+    return RedirectResponse(url=f"{authentik_url}/application/o/authorize/{params}")
+
+
+@app.get("/auth/callback")
+async def auth_callback(request: Request, code: str = None, state: str = None, error: str = None):
+    """Handle OAuth2 callback from Authentik."""
+    if error:
+        return templates.TemplateResponse(
+            "login.html", {"request": request, "error": f"Login failed: {error}"}
+        )
+
+    if not code or state != request.session.get("oauth_state"):
+        return templates.TemplateResponse(
+            "login.html", {"request": request, "error": "Invalid OAuth state. Please try again."}
+        )
+
+    request.session.pop("oauth_state", None)
+
+    authentik_url = os.getenv("AUTHENTIK_URL")
+    client_id = os.getenv("AUTHENTIK_CLIENT_ID")
+    client_secret = os.getenv("AUTHENTIK_CLIENT_SECRET")
+    redirect_uri = os.getenv("AUTHENTIK_REDIRECT_URI")
+
+    async with httpx.AsyncClient() as client:
+        token_response = await client.post(
+            f"{authentik_url}/application/o/token/",
+            data={
+                "grant_type": "authorization_code",
+                "code": code,
+                "redirect_uri": redirect_uri,
+                "client_id": client_id,
+                "client_secret": client_secret,
+            },
+        )
+
+    if token_response.status_code != 200:
+        return templates.TemplateResponse(
+            "login.html", {"request": request, "error": "Failed to retrieve token from Authentik."}
+        )
+
+    token_data = token_response.json()
+    access_token = token_data.get("access_token")
+
+    async with httpx.AsyncClient() as client:
+        userinfo_response = await client.get(
+            f"{authentik_url}/application/o/userinfo/",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+
+    if userinfo_response.status_code != 200:
+        return templates.TemplateResponse(
+            "login.html", {"request": request, "error": "Failed to retrieve user info from Authentik."}
+        )
+
+    user_info = userinfo_response.json()
+    username = user_info.get("preferred_username") or user_info.get("email")
+
+    request.session["username"] = username
+    return RedirectResponse(url="/lobby", status_code=303)
 
 
 @app.get("/logout")
 async def logout(request: Request):
-    """Log out the current user."""
-    request.session.pop("username", None)
-    return RedirectResponse(url="/login", status_code=303)
+    """Log out the current user and redirect to Authentik logout."""
+    request.session.clear()
+    authentik_url = os.getenv("AUTHENTIK_URL")
+    redirect_uri = os.getenv("AUTHENTIK_REDIRECT_URI", "").rsplit("/auth/callback", 1)[0] + "/login"
+    return RedirectResponse(
+        url=f"{authentik_url}/application/o/logout/?redirect_to={redirect_uri}",
+        status_code=303,
+    )
 
 
 @app.get("/admin-bypass")
@@ -447,11 +498,6 @@ async def lobby_get(request: Request):
     if not username:
         return RedirectResponse(url="/login", status_code=303)
 
-    # Check business hours restriction for hosting (lobby needed to create sessions)
-    restriction_response = check_business_hours_restriction(request, "host")
-    if restriction_response:
-        return restriction_response
-
     # Check if user is already in a session
     session_code, session = get_session_for_user(username)
 
@@ -477,18 +523,6 @@ async def lobby_post(
     username = get_current_user(request)
     if not username:
         return RedirectResponse(url="/login", status_code=303)
-
-    # Apply business hours restrictions based on action type
-    if action in ["create_game", "start_game"]:
-        # These actions require hosting permissions - check for business hours
-        restriction_response = check_business_hours_restriction(request, "host")
-        if restriction_response:
-            return restriction_response
-    elif action in ["join_game", "leave_game"]:
-        # These actions are for joining existing sessions - allow during business hours
-        restriction_response = check_business_hours_restriction(request, "join")
-        if restriction_response:
-            return restriction_response
 
     message = ""
     current_session_code, current_session = get_session_for_user(username)
@@ -553,11 +587,6 @@ async def lobby_post(
 @app.get("/play/{session_code}", response_class=HTMLResponse)
 async def play_get(request: Request, session_code: str):
     """Handle GET request for play page with session code."""
-    # Allow joining existing game sessions during business hours
-    restriction_response = check_business_hours_restriction(request, "join")
-    if restriction_response:
-        return restriction_response
-
     username = get_current_user(request)
     if not username:
         return RedirectResponse(url="/login", status_code=303)
@@ -597,11 +626,6 @@ async def play_post(
     card_idx: Annotated[Optional[int], Form()] = None,
 ):
     """Handle POST request for game actions with session code."""
-    # Allow playing in existing game sessions during business hours
-    restriction_response = check_business_hours_restriction(request, "join")
-    if restriction_response:
-        return restriction_response
-
     username = get_current_user(request)
     if not username:
         return RedirectResponse(url="/login", status_code=303)
