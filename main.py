@@ -459,12 +459,13 @@ async def logout(request: Request):
     request.session.clear()
     if sso_enabled():
         authentik_url = os.getenv("AUTHENTIK_URL")
+        app_slug = os.getenv("AUTHENTIK_APP_SLUG")
         redirect_uri = (
             os.getenv("AUTHENTIK_REDIRECT_URI", "").rsplit("/auth/callback", 1)[0]
             + "/login"
         )
         return RedirectResponse(
-            url=f"{authentik_url}/application/o/logout/?redirect_to={redirect_uri}",
+            url=f"{authentik_url}/application/o/{app_slug}/end-session/?redirect_to={redirect_uri}",
             status_code=303,
         )
     return RedirectResponse(url="/login", status_code=303)
