@@ -29,8 +29,7 @@
         <h2>Login</h2>
         {% if error %}
         <div style="color: red">{{ error }}</div>
-        {% endif %}
-        {% if sso_enabled %}
+        {% endif %} {% if sso_enabled %}
         <a href="/login/sso">
           <button type="button">Login with Authentik</button>
         </a>
