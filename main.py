@@ -20,6 +20,7 @@ from database import (
     user_exists,
     create_user,
     get_all_users,
+    validate_user_login,
     create_admin_user,
     admin_exists,
 )
@@ -31,7 +32,8 @@ def initialize():
     """
     Load environment variables and return the directory path
     of the current file.
-    Also ensures admin credentials are present in the admin table.
+    Also ensures admin credentials are present in the admin table,
+    and seeds local users when SSO is disabled.
     """
     load_dotenv(path.join(path.dirname(__file__), ".env"))
     # Insert admin creds into admin table if not present
@@ -39,6 +41,19 @@ def initialize():
     admin_pass = os.getenv("ADMIN_PASSWORD")
     if admin_user and admin_pass and not admin_exists(admin_user):
         create_admin_user(admin_user, admin_pass)
+    # Seed local users (local profile only — SSO disabled)
+    if os.getenv("SSO_ENABLED", "false").lower() != "true":
+        local_user = os.getenv("LOCAL_USER")
+        local_user_pass = os.getenv("LOCAL_USER_PASSWORD")
+        local_admin = os.getenv("LOCAL_ADMIN_USER")
+        local_admin_pass = os.getenv("LOCAL_ADMIN_PASSWORD")
+        if local_user and local_user_pass and not user_exists(local_user):
+            create_user(local_user, local_user_pass)
+        if local_admin and local_admin_pass:
+            if not user_exists(local_admin):
+                create_user(local_admin, local_admin_pass)
+            if not admin_exists(local_admin):
+                create_admin_user(local_admin, local_admin_pass)
     return path.dirname(path.realpath(__file__))
 
 
@@ -294,17 +309,44 @@ async def home(request: Request):
     return await login_get(request)
 
 
+def sso_enabled() -> bool:
+    return os.getenv("SSO_ENABLED", "false").lower() == "true"
+
+
 @app.get("/login", response_class=HTMLResponse)
 async def login_get(request: Request):
-    """Show login page with SSO button."""
+    """Show login page — SSO button or username/password form depending on profile."""
     if request.session.get("username"):
         return RedirectResponse(url="/lobby", status_code=303)
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse("login.html", {"request": request, "sso_enabled": sso_enabled()})
+
+
+@app.post("/login")
+async def login_post(
+    request: Request,
+    username: Annotated[str, Form(...)],
+    password: Annotated[str, Form(...)],
+):
+    """Handle local username/password login (non-SSO profiles only)."""
+    if sso_enabled():
+        return RedirectResponse(url="/login", status_code=303)
+
+    if validate_user_login(username, password):
+        request.session["username"] = username
+        return RedirectResponse(url="/lobby", status_code=303)
+
+    return templates.TemplateResponse(
+        "login.html",
+        {"request": request, "sso_enabled": False, "error": "Invalid username or password."},
+    )
 
 
 @app.get("/login/sso")
 async def login_sso(request: Request):
-    """Redirect user to Authentik for authentication."""
+    """Redirect user to Authentik for authentication (SSO profiles only)."""
+    if not sso_enabled():
+        return RedirectResponse(url="/login", status_code=303)
+
     authentik_url = os.getenv("AUTHENTIK_URL")
     client_id = os.getenv("AUTHENTIK_CLIENT_ID")
     redirect_uri = os.getenv("AUTHENTIK_REDIRECT_URI")
@@ -324,15 +366,18 @@ async def login_sso(request: Request):
 
 @app.get("/auth/callback")
 async def auth_callback(request: Request, code: str = None, state: str = None, error: str = None):
-    """Handle OAuth2 callback from Authentik."""
+    """Handle OAuth2 callback from Authentik (SSO profiles only)."""
+    if not sso_enabled():
+        return RedirectResponse(url="/login", status_code=303)
+
     if error:
         return templates.TemplateResponse(
-            "login.html", {"request": request, "error": f"Login failed: {error}"}
+            "login.html", {"request": request, "sso_enabled": True, "error": f"Login failed: {error}"}
         )
 
     if not code or state != request.session.get("oauth_state"):
         return templates.TemplateResponse(
-            "login.html", {"request": request, "error": "Invalid OAuth state. Please try again."}
+            "login.html", {"request": request, "sso_enabled": True, "error": "Invalid OAuth state. Please try again."}
         )
 
     request.session.pop("oauth_state", None)
@@ -356,7 +401,7 @@ async def auth_callback(request: Request, code: str = None, state: str = None, e
 
     if token_response.status_code != 200:
         return templates.TemplateResponse(
-            "login.html", {"request": request, "error": "Failed to retrieve token from Authentik."}
+            "login.html", {"request": request, "sso_enabled": True, "error": "Failed to retrieve token from Authentik."}
         )
 
     token_data = token_response.json()
@@ -370,7 +415,7 @@ async def auth_callback(request: Request, code: str = None, state: str = None, e
 
     if userinfo_response.status_code != 200:
         return templates.TemplateResponse(
-            "login.html", {"request": request, "error": "Failed to retrieve user info from Authentik."}
+            "login.html", {"request": request, "sso_enabled": True, "error": "Failed to retrieve user info from Authentik."}
         )
 
     user_info = userinfo_response.json()
@@ -382,14 +427,16 @@ async def auth_callback(request: Request, code: str = None, state: str = None, e
 
 @app.get("/logout")
 async def logout(request: Request):
-    """Log out the current user and redirect to Authentik logout."""
+    """Log out the current user."""
     request.session.clear()
-    authentik_url = os.getenv("AUTHENTIK_URL")
-    redirect_uri = os.getenv("AUTHENTIK_REDIRECT_URI", "").rsplit("/auth/callback", 1)[0] + "/login"
-    return RedirectResponse(
-        url=f"{authentik_url}/application/o/logout/?redirect_to={redirect_uri}",
-        status_code=303,
-    )
+    if sso_enabled():
+        authentik_url = os.getenv("AUTHENTIK_URL")
+        redirect_uri = os.getenv("AUTHENTIK_REDIRECT_URI", "").rsplit("/auth/callback", 1)[0] + "/login"
+        return RedirectResponse(
+            url=f"{authentik_url}/application/o/logout/?redirect_to={redirect_uri}",
+            status_code=303,
+        )
+    return RedirectResponse(url="/login", status_code=303)
 
 
 @app.get("/admin-bypass")

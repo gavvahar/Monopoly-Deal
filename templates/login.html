@@ -30,9 +30,19 @@
         {% if error %}
         <div style="color: red">{{ error }}</div>
         {% endif %}
+        {% if sso_enabled %}
         <a href="/login/sso">
           <button type="button">Login with Authentik</button>
         </a>
+        {% else %}
+        <form method="post" action="/login">
+          <label for="username">Username:</label>
+          <input type="text" id="username" name="username" required />
+          <label for="password">Password:</label>
+          <input type="password" id="password" name="password" required />
+          <button type="submit">Login</button>
+        </form>
+        {% endif %}
       </div>
     </div>
     <script src="/static/theme.js"></script>

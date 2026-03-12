@@ -245,6 +245,17 @@ def create_admin_user(username: str, password: str) -> bool:
     return True
 
 
+def validate_user_login(username: str, password: str) -> bool:
+    """
+    Validate regular user login credentials.
+    """
+    query = "SELECT password FROM users WHERE username = %s;"
+    results = execute_query(query, (username,), fetch=True) or []
+    if not results:
+        return False
+    return results[0][0] == password
+
+
 def validate_admin_login(username: str, password: str) -> bool:
     """
     Validate admin login credentials.
