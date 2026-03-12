@@ -78,7 +78,52 @@ With policy engine mode set to `ANY`, a user only needs to be in one of the grou
 
 ---
 
-## 5. Configure `.env`
+## 5. Group Mapping (pass groups claim to the app)
+
+The app reads the `groups` claim from the userinfo response to determine admin access.
+You need to create a Property Mapping in Authentik and add it to the provider.
+
+### 5a. Create a Property Mapping
+
+Go to **Admin Interface → Customization → Property Mappings → Create**
+
+| Field | Value |
+| --- | --- |
+| Type | `OAuth2 Provider - Scope Mapping` |
+| Name | `groups` |
+| Scope name | `groups` |
+| Expression | see below |
+
+**Expression:**
+
+```python
+return [group.name for group in request.user.ak_groups.all()]
+```
+
+> **Note:** Authentik may already have a built-in mapping called `goauthentik.io/oidc/groups`. If it exists, you can use that instead of creating a new one.
+
+### 5b. Add the mapping to your Provider
+
+Go to your provider → **Edit**
+
+Under **Advanced protocol settings → Scopes**, add the `groups` mapping you just created (or the built-in one).
+
+Save the provider.
+
+### 5c. How it works in the app
+
+When a user logs in via SSO, the app checks the `groups` claim against two env vars:
+
+| Env var | Group | Effect |
+| --- | --- | --- |
+| `AUTHENTIK_ADMIN_GROUP` | e.g. `Monopoly_Deal_Dev_Admins` | User gets player + admin access (`/admin` panel available) |
+| `AUTHENTIK_USER_GROUP` | e.g. `Monopoly_Deal_Dev_Users` | User gets player access only |
+
+If the user is in **neither** group, login is rejected with an access denied error even if Authentik authenticated them successfully.
+
+---
+
+## 6. Configure `.env`
 
 Add the following to your `.env` file:
 
@@ -89,6 +134,8 @@ AUTHENTIK_CLIENT_ID=<Client ID from step 1>
 AUTHENTIK_CLIENT_SECRET=<Client Secret from step 1>
 AUTHENTIK_REDIRECT_URI=https://<your-app-domain>/auth/callback
 AUTHENTIK_APP_SLUG=<slug from step 2>
+AUTHENTIK_ADMIN_GROUP=<admin group name from step 3>
+AUTHENTIK_USER_GROUP=<user group name from step 3>
 ```
 
 ### URL reference

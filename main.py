@@ -448,8 +448,29 @@ async def auth_callback(
 
     user_info = userinfo_response.json()
     username = user_info.get("preferred_username") or user_info.get("email")
+    groups = user_info.get("groups", [])
 
     request.session["username"] = username
+
+    admin_group = os.getenv("AUTHENTIK_ADMIN_GROUP", "")
+    user_group = os.getenv("AUTHENTIK_USER_GROUP", "")
+
+    in_admin_group = admin_group and admin_group in groups
+    in_user_group = user_group and user_group in groups
+
+    if not in_admin_group and not in_user_group:
+        return templates.TemplateResponse(
+            "login.html",
+            {
+                "request": request,
+                "sso_enabled": True,
+                "error": "You do not have access to this application.",
+            },
+        )
+
+    if in_admin_group:
+        request.session["admin_username"] = username
+
     return RedirectResponse(url="/lobby", status_code=303)
 
 
