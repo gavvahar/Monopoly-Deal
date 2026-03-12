@@ -23,7 +23,7 @@
     <div class="center-container">
       <h1 class="game-title">Monopoly Deal - Game Lobby</h1>
       <div class="lobby-box">
-        <h2>Welcome, {{ username }}!</h2>
+        <h2>Welcome, {{ username }}! <span class="role-badge {{ 'role-admin' if is_admin else 'role-user' }}">{{ 'Admin' if is_admin else 'User' }}</span></h2>
 
         {% if message %}
         <div

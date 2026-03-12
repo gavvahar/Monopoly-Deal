@@ -613,6 +613,7 @@ async def lobby_get(request: Request):
         {
             "request": request,
             "username": username,
+            "is_admin": bool(get_current_admin(request)),
             "current_session": session_code,
             "current_session_data": session,
             "message": "",
@@ -684,6 +685,7 @@ async def lobby_post(
         {
             "request": request,
             "username": username,
+            "is_admin": bool(get_current_admin(request)),
             "current_session": current_session_code,
             "current_session_data": current_session,
             "message": message,

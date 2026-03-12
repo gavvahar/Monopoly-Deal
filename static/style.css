@@ -856,3 +856,25 @@ input[type="password"] {
     text-align: center;
   }
 }
+
+.role-badge {
+  display: inline-block;
+  font-size: 0.6em;
+  font-weight: 600;
+  padding: 0.2em 0.7em;
+  border-radius: 999px;
+  vertical-align: middle;
+  margin-left: 0.5em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.role-admin {
+  background: var(--button-danger);
+  color: #fff;
+}
+
+.role-user {
+  background: var(--button-primary);
+  color: #fff;
+}
