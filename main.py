@@ -318,7 +318,9 @@ async def login_get(request: Request):
     """Show login page — SSO button or username/password form depending on profile."""
     if request.session.get("username"):
         return RedirectResponse(url="/lobby", status_code=303)
-    return templates.TemplateResponse("login.html", {"request": request, "sso_enabled": sso_enabled()})
+    return templates.TemplateResponse(
+        "login.html", {"request": request, "sso_enabled": sso_enabled()}
+    )
 
 
 @app.post("/login")
@@ -337,7 +339,11 @@ async def login_post(
 
     return templates.TemplateResponse(
         "login.html",
-        {"request": request, "sso_enabled": False, "error": "Invalid username or password."},
+        {
+            "request": request,
+            "sso_enabled": False,
+            "error": "Invalid username or password.",
+        },
     )
 
 
@@ -365,19 +371,31 @@ async def login_sso(request: Request):
 
 
 @app.get("/auth/callback")
-async def auth_callback(request: Request, code: str = None, state: str = None, error: str = None):
+async def auth_callback(
+    request: Request, code: str = None, state: str = None, error: str = None
+):
     """Handle OAuth2 callback from Authentik (SSO profiles only)."""
     if not sso_enabled():
         return RedirectResponse(url="/login", status_code=303)
 
     if error:
         return templates.TemplateResponse(
-            "login.html", {"request": request, "sso_enabled": True, "error": f"Login failed: {error}"}
+            "login.html",
+            {
+                "request": request,
+                "sso_enabled": True,
+                "error": f"Login failed: {error}",
+            },
         )
 
     if not code or state != request.session.get("oauth_state"):
         return templates.TemplateResponse(
-            "login.html", {"request": request, "sso_enabled": True, "error": "Invalid OAuth state. Please try again."}
+            "login.html",
+            {
+                "request": request,
+                "sso_enabled": True,
+                "error": "Invalid OAuth state. Please try again.",
+            },
         )
 
     request.session.pop("oauth_state", None)
@@ -401,7 +419,12 @@ async def auth_callback(request: Request, code: str = None, state: str = None, e
 
     if token_response.status_code != 200:
         return templates.TemplateResponse(
-            "login.html", {"request": request, "sso_enabled": True, "error": "Failed to retrieve token from Authentik."}
+            "login.html",
+            {
+                "request": request,
+                "sso_enabled": True,
+                "error": "Failed to retrieve token from Authentik.",
+            },
         )
 
     token_data = token_response.json()
@@ -415,7 +438,12 @@ async def auth_callback(request: Request, code: str = None, state: str = None, e
 
     if userinfo_response.status_code != 200:
         return templates.TemplateResponse(
-            "login.html", {"request": request, "sso_enabled": True, "error": "Failed to retrieve user info from Authentik."}
+            "login.html",
+            {
+                "request": request,
+                "sso_enabled": True,
+                "error": "Failed to retrieve user info from Authentik.",
+            },
         )
 
     user_info = userinfo_response.json()
@@ -431,7 +459,10 @@ async def logout(request: Request):
     request.session.clear()
     if sso_enabled():
         authentik_url = os.getenv("AUTHENTIK_URL")
-        redirect_uri = os.getenv("AUTHENTIK_REDIRECT_URI", "").rsplit("/auth/callback", 1)[0] + "/login"
+        redirect_uri = (
+            os.getenv("AUTHENTIK_REDIRECT_URI", "").rsplit("/auth/callback", 1)[0]
+            + "/login"
+        )
         return RedirectResponse(
             url=f"{authentik_url}/application/o/logout/?redirect_to={redirect_uri}",
             status_code=303,

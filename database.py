@@ -11,7 +11,6 @@ import psycopg2
 from typing import List, Tuple, Optional
 from psycopg2 import OperationalError
 
-
 # Global database configuration
 _db_config = {
     "db_name": None,
