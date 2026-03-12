@@ -6,6 +6,30 @@ x-environment: &environment
   PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
   PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
 
+x-db-base: &db-base
+  image: postgres:16
+  environment:
+    <<: *environment
+  volumes:
+    - pgdata:/var/lib/postgresql/data
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+    start_period: 10s
+
+x-database-service-base: &database-service-base
+  build:
+    context: .
+    dockerfile: Docker/Dockerfile.database
+  pull_policy: build
+  environment:
+    <<: *environment
+  volumes:
+    - .:/app
+  working_dir: /app
+
 x-web-base: &web-base
   build:
     context: .
@@ -15,15 +39,8 @@ x-web-base: &web-base
   networks:
     monopoly_network:
       ipv4_address: 172.20.0.11
-  environment:
-    <<: *environment
   volumes:
     - .:/app
-  depends_on:
-    db:
-      condition: service_healthy
-    database_service:
-      condition: service_completed_successfully
 
 networks:
   monopoly_network:
@@ -33,62 +50,101 @@ networks:
         - subnet: 172.20.0.0/16
 
 services:
-  db:
-    image: postgres:16
-    container_name: monopoly_postgres
-    profiles: [prod, dev, local]
-    environment:
-      <<: *environment
+  # --- prod ---
+  db-prod:
+    <<: *db-base
+    container_name: monopoly_postgres_prod
+    profiles: [prod]
     ports:
-      - "5434:5432"
+      - "5432:5432"
     networks:
       monopoly_network:
         ipv4_address: 172.20.0.12
     volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+      - pgdata_prod:/var/lib/postgresql/data
 
-  database_service:
-    build:
-      context: .
-      dockerfile: Docker/Dockerfile.database
-    pull_policy: build
-    profiles: [prod, dev, local]
-    container_name: monopoly_database_service
+  database_service-prod:
+    <<: *database-service-base
+    profiles: [prod]
+    container_name: monopoly_database_service_prod
     networks:
       monopoly_network:
         ipv4_address: 172.20.0.10
     environment:
       <<: *environment
+      DB_HOST: db-prod
     depends_on:
-      db:
+      db-prod:
         condition: service_healthy
-    volumes:
-      - .:/app
-    working_dir: /app
 
   web-prod:
     <<: *web-base
     profiles: [prod]
     ports:
       - "${PROD_WEB_PORT:-8001}:8000"
+    environment:
+      <<: *environment
+      DB_HOST: db-prod
+    depends_on:
+      db-prod:
+        condition: service_healthy
+      database_service-prod:
+        condition: service_completed_successfully
+
+  # --- dev & local ---
+  db-dev:
+    <<: *db-base
+    container_name: monopoly_postgres_dev
+    profiles: [dev, local]
+    ports:
+      - "5434:5432"
+    networks:
+      monopoly_network:
+        ipv4_address: 172.20.0.13
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+
+  database_service-dev:
+    <<: *database-service-base
+    profiles: [dev, local]
+    container_name: monopoly_database_service_dev
+    networks:
+      monopoly_network:
+        ipv4_address: 172.20.0.14
+    environment:
+      <<: *environment
+      DB_HOST: db-dev
+    depends_on:
+      db-dev:
+        condition: service_healthy
 
   web-dev:
     <<: *web-base
     profiles: [dev]
     ports:
       - "${DEV_WEB_PORT:-8002}:8000"
+    environment:
+      <<: *environment
+      DB_HOST: db-dev
+    depends_on:
+      db-dev:
+        condition: service_healthy
+      database_service-dev:
+        condition: service_completed_successfully
 
   web-local:
     <<: *web-base
     profiles: [local]
     ports:
       - "${LOCAL_WEB_PORT:-8003}:8000"
+    environment:
+      <<: *environment
+      DB_HOST: db-dev
+    depends_on:
+      db-dev:
+        condition: service_healthy
+      database_service-dev:
+        condition: service_completed_successfully
 
   tox:
     build:
@@ -97,7 +153,7 @@ services:
     profiles: [dev, local]
     working_dir: /app
     depends_on:
-      database_service:
+      database_service-dev:
         condition: service_completed_successfully
     command: tox
 
@@ -111,12 +167,13 @@ services:
       - "5050:80"
     networks:
       monopoly_network:
-        ipv4_address: 172.20.0.13
+        ipv4_address: 172.20.0.15
     depends_on:
-      - db
+      - db-dev
     volumes:
       - pgadmin_data:/var/lib/pgadmin
 
 volumes:
-  pgdata:
+  pgdata_prod:
+  pgdata_dev:
   pgadmin_data:
