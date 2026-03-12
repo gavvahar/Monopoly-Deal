@@ -9,7 +9,6 @@ import os
 import psycopg2
 from typing import List, Tuple, Optional
 
-
 # Global database configuration
 _db_config = {
     "db_name": None,
@@ -265,14 +264,12 @@ def initialize_database():
     )
     cur = conn.cursor()
     # Ensure the users table exists
-    cur.execute(
-        """
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS users (
             username TEXT PRIMARY KEY,
             password TEXT
         );
-    """
-    )
+    """)
     conn.commit()
     cur.close()
     conn.close()
