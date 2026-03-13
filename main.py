@@ -61,7 +61,11 @@ def is_business_hours():
     """
     Check if the current time is within business hours (9 AM - 5 PM EST, Monday-Friday).
     Returns True if within business hours, False otherwise.
+    Only active when BUSINESS_HOURS_ENABLED is set to "true".
     """
+    if os.getenv("BUSINESS_HOURS_ENABLED", "false").lower() != "true":
+        return False
+
     # Get current time in EST
     est = pytz.timezone("US/Eastern")
     current_time = datetime.now(est)
@@ -636,6 +640,9 @@ async def lobby_post(
     current_session_code, current_session = get_session_for_user(username)
 
     if action == "create_game":
+        restriction_response = check_business_hours_restriction(request, "host")
+        if restriction_response:
+            return restriction_response
         if current_session_code:
             message = "You are already in a game session"
         else:
@@ -655,6 +662,9 @@ async def lobby_post(
                 current_session = game_sessions[current_session_code]
 
     elif action == "start_game":
+        restriction_response = check_business_hours_restriction(request, "host")
+        if restriction_response:
+            return restriction_response
         if not current_session_code:
             message = "You are not in any game session"
         else:

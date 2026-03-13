@@ -84,6 +84,7 @@ services:
       <<: *environment
       DB_HOST: db-prod
       SSO_ENABLED: "true"
+      BUSINESS_HOURS_ENABLED: "true"
     depends_on:
       db-prod:
         condition: service_healthy
