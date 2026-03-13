@@ -147,7 +147,7 @@ services:
   db-local:
     <<: *db-base
     container_name: monopoly_postgres_local
-    profiles: [local]
+    profiles: [local, local-sso]
     ports:
       - "5435:5432"
     networks:
@@ -158,7 +158,7 @@ services:
 
   database_service-local:
     <<: *database-service-base
-    profiles: [local]
+    profiles: [local, local-sso]
     container_name: monopoly_database_service_local
     networks:
       monopoly_network:
@@ -183,6 +183,26 @@ services:
       LOCAL_USER_PASSWORD: ${LOCAL_USER_PASSWORD}
       LOCAL_ADMIN_USER: ${LOCAL_ADMIN_USER}
       LOCAL_ADMIN_PASSWORD: ${LOCAL_ADMIN_PASSWORD}
+    depends_on:
+      db-local:
+        condition: service_healthy
+      database_service-local:
+        condition: service_completed_successfully
+
+  web-local-sso:
+    <<: *web-base
+    container_name: monopoly_web_local_sso
+    profiles: [local-sso]
+    networks:
+      monopoly_network:
+        ipv4_address: 172.20.0.18
+    ports:
+      - "${LOCAL_SSO_WEB_PORT:-8004}:8000"
+    environment:
+      <<: *environment
+      DB_HOST: db-local
+      SSO_ENABLED: "true"
+      AUTHENTIK_REDIRECT_URI: "http://localhost:${LOCAL_SSO_WEB_PORT:-8004}/auth/callback"
     depends_on:
       db-local:
         condition: service_healthy
