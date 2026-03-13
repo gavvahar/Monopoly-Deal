@@ -4,6 +4,8 @@ Game logic for the car-themed deck (functional, no classes).
 
 import random
 import cards
+import rules
+
 
 # ---------------- Card / Deck ----------------
 
@@ -32,14 +34,31 @@ def create_deck():
 # ---------------- State Management ----------------
 
 
+def count_complete_sets(player):
+    """Count the number of complete color sets a player owns."""
+    set_sizes = rules.get_set_sizes()
+    color_counts = {}
+    for card in player["properties"]:
+        color = card.get("color")
+        if color and color in set_sizes:
+            color_counts[color] = color_counts.get(color, 0) + 1
+    return sum(
+        1
+        for color, cnt in color_counts.items()
+        if rules.is_full_set(color, cnt)
+    )
+
+
 def start_game(player_names):
     """
     Start a new game; return game state dict.
     state = {
-        'players': [ { 'name': str, 'hand': [cards], 'properties': [cards] }, ... ],
+        'players': [ { 'name': str, 'hand': [cards], 'properties': [cards], 'bank': [cards] }, ... ],
         'deck': [cards],
         'started': bool,
-        'current_player_idx': int
+        'current_player_idx': int,
+        'draws_done': bool,
+        'plays_this_turn': int,
     }
     """
     deck = create_deck()
@@ -49,9 +68,17 @@ def start_game(player_names):
             "name": name,
             "hand": [deck.pop() for _ in range(5)],
             "properties": [],
+            "bank": [],
         }
         players.append(player)
-    return {"players": players, "deck": deck, "started": True, "current_player_idx": 0}
+    return {
+        "players": players,
+        "deck": deck,
+        "started": True,
+        "current_player_idx": 0,
+        "draws_done": False,
+        "plays_this_turn": 0,
+    }
 
 
 # ---------------- Game Actions ----------------
@@ -72,20 +99,29 @@ def play_card(state, card_idx):
     hand = player["hand"]
     if card_idx < 0 or card_idx >= len(hand):
         return "Invalid card index."
+    max_plays = rules.get_turn_limits()["max_plays"]
+    if state.get("plays_this_turn", 0) >= max_plays:
+        return f"You have already played {max_plays} cards this turn."
     card = hand.pop(card_idx)
+    state["plays_this_turn"] = state.get("plays_this_turn", 0) + 1
     card_type = card["card_type"]
+    if card_type == "money":
+        player["bank"].append(card)
+        return f"{player['name']} banked {card['name']} (+{card['value']}M)."
     if card_type == "property":
         player["properties"].append(card)
-        if len(player["properties"]) >= 3:
+        if count_complete_sets(player) >= 3:
             state["started"] = False
-            return f"{player['name']} wins!"
+            return f"{player['name']} wins with 3 complete sets!"
         return f"{player['name']} played {card['name']} as property."
-    if card_type == "money":
-        return f"{player['name']} banked {card['name']}."
+    if card_type == "wild":
+        player["properties"].append(card)
+        if count_complete_sets(player) >= 3:
+            state["started"] = False
+            return f"{player['name']} wins with 3 complete sets!"
+        return f"{player['name']} placed wild card {card['name']}."
     if card_type == "action":
         return f"{player['name']} played action card {card['name']}."
-    if card_type == "wild":
-        return f"{player['name']} placed wild card {card['name']}."
     if card_type == "rent":
         return f"{player['name']} prepared rent card {card['name']}."
     return f"{player['name']} played {card['name']}."
@@ -96,6 +132,8 @@ def next_turn(state):
     state["current_player_idx"] = (state["current_player_idx"] + 1) % len(
         state["players"]
     )
+    state["draws_done"] = False
+    state["plays_this_turn"] = 0
 
 
 # ---------------- Optional Helper ----------------

@@ -14,6 +14,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from dotenv import load_dotenv
 from game import start_game, draw_card, play_card, next_turn
+from rules import draw_count, get_set_sizes, is_full_set
 from database import (
     initialize_database,
     get_usernames,
@@ -190,6 +191,47 @@ users = set()
 # Session management for multiplayer games
 game_sessions = {}  # session_code -> game_state
 initialize()
+
+# Display color map for property sets
+PROPERTY_COLOR_MAP = {
+    "Lexus": "#d4a017",
+    "Tesla": "#cc3333",
+    "Rivian": "#27ae60",
+    "Chevelote": "#e67e22",
+    "Nissan": "#8e44ad",
+    "Ford": "#2980b9",
+    "Benz": "#16a085",
+    "Lamborghini": "#c0392b",
+    "McLaren": "#e74c3c",
+    "Bugatti": "#2c3e50",
+}
+
+
+def get_player_stats(player):
+    """Compute display stats for a player: bank total, properties grouped by color, complete sets."""
+    bank_total = sum(c.get("value", 0) for c in player.get("bank", []))
+    set_sizes = get_set_sizes()
+    properties_by_color = {}
+    for card in player.get("properties", []):
+        color = card.get("color", "Wild")
+        if color not in properties_by_color:
+            properties_by_color[color] = []
+        properties_by_color[color].append(card)
+    color_progress = {
+        color: {
+            "count": len(cards_in_color),
+            "required": set_sizes.get(color, 0),
+            "complete": color in set_sizes and is_full_set(color, len(cards_in_color)),
+        }
+        for color, cards_in_color in properties_by_color.items()
+    }
+    complete_sets = sum(1 for info in color_progress.values() if info["complete"])
+    return {
+        "bank_total": bank_total,
+        "properties_by_color": properties_by_color,
+        "color_progress": color_progress,
+        "complete_sets": complete_sets,
+    }
 
 
 # Session management functions
@@ -720,6 +762,40 @@ async def lobby_post(
     )
 
 
+def build_play_context(request, game_state, session_code, username, message=""):
+    """Build the template context dict for the play page."""
+    current_player = game_state["players"][game_state["current_player_idx"]]
+    viewing_player = next(
+        (p for p in game_state["players"] if p["name"] == username),
+        current_player,
+    )
+    # Auto-draw if it's this player's turn and draws haven't happened yet
+    if current_player["name"] == username and not game_state.get("draws_done", True):
+        n = draw_count(len(viewing_player["hand"]))
+        for _ in range(n):
+            if game_state["deck"]:
+                viewing_player["hand"].append(game_state["deck"].pop())
+        game_state["draws_done"] = True
+    is_my_turn = current_player["name"] == username
+    plays_remaining = max(0, 3 - game_state.get("plays_this_turn", 0))
+    viewing_stats = get_player_stats(viewing_player)
+    all_player_stats = {p["name"]: get_player_stats(p) for p in game_state["players"]}
+    return {
+        "request": request,
+        "game_state": game_state,
+        "current_player": current_player,
+        "viewing_player": viewing_player,
+        "is_my_turn": is_my_turn,
+        "plays_remaining": plays_remaining,
+        "session_code": session_code,
+        "message": message,
+        "viewing_stats": viewing_stats,
+        "all_player_stats": all_player_stats,
+        "color_map": PROPERTY_COLOR_MAP,
+        "deck_size": len(game_state["deck"]),
+    }
+
+
 @app.get("/play/{session_code}", response_class=HTMLResponse)
 async def play_get(request: Request, session_code: str):
     """Handle GET request for play page with session code."""
@@ -739,19 +815,8 @@ async def play_get(request: Request, session_code: str):
     if not session["started"] or not session["game_state"]:
         return RedirectResponse(url="/lobby", status_code=303)
 
-    game_state = session["game_state"]
-    current_player = game_state["players"][game_state["current_player_idx"]]
-
-    return templates.TemplateResponse(
-        "play.html",
-        {
-            "request": request,
-            "game_state": game_state,
-            "current_player": current_player,
-            "session_code": session_code,
-            "message": "",
-        },
-    )
+    ctx = build_play_context(request, session["game_state"], session_code, username)
+    return templates.TemplateResponse("play.html", ctx)
 
 
 @app.post("/play/{session_code}")
@@ -786,20 +851,14 @@ async def play_post(
     elif action == "play":
         if card_idx is not None:
             message = play_card(game_state, card_idx)
+            if not game_state["started"]:
+                session["started"] = False
     elif action == "end_turn":
         next_turn(game_state)
+        message = "Turn ended."
 
-    current_player = game_state["players"][game_state["current_player_idx"]]
-    return templates.TemplateResponse(
-        "play.html",
-        {
-            "request": request,
-            "game_state": game_state,
-            "current_player": current_player,
-            "session_code": session_code,
-            "message": message,
-        },
-    )
+    ctx = build_play_context(request, game_state, session_code, username, message)
+    return templates.TemplateResponse("play.html", ctx)
 
 
 # Fallback route for old /play endpoint (redirect to lobby)
