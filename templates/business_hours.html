@@ -40,6 +40,16 @@
             padding-top: 20px;
           "
         >
+          {% if is_admin %}
+          <h3>Admin Access</h3>
+          <p style="color: #666; font-size: 0.9em">You are logged in as admin.</p>
+          <form method="post" action="/admin-bypass-confirm">
+            <input type="hidden" name="redirect_url" value="{{ request.url.path }}" />
+            <button type="submit" class="btn" style="width: 100%; padding: 10px">
+              Bypass Restriction
+            </button>
+          </form>
+          {% else %}
           <h3>Admin Access (2FA Required)</h3>
           {% if error %}
           <div class="error-message" style="color: red; margin-bottom: 10px">
@@ -93,6 +103,7 @@
               Bypass Restriction
             </button>
           </form>
+          {% endif %}
         </div>
       </div>
     </div>

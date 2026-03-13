@@ -33,10 +33,6 @@ x-web-base: &web-base
     context: .
     dockerfile: Docker/Dockerfile
   pull_policy: build
-  container_name: monopoly_web
-  networks:
-    monopoly_network:
-      ipv4_address: 172.20.0.11
   volumes:
     - .:/app
 
@@ -78,12 +74,17 @@ services:
   web-prod:
     <<: *web-base
     profiles: [prod]
+    container_name: monopoly_web_prod
+    networks:
+      monopoly_network:
+        ipv4_address: 172.20.0.11
     ports:
       - "${PROD_WEB_PORT:-8001}:8000"
     environment:
       <<: *environment
       DB_HOST: db-prod
       SSO_ENABLED: "true"
+      BUSINESS_HOURS_ENABLED: "true"
     depends_on:
       db-prod:
         condition: service_healthy
@@ -120,6 +121,10 @@ services:
   web-dev:
     <<: *web-base
     profiles: [dev]
+    container_name: monopoly_web_dev
+    networks:
+      monopoly_network:
+        ipv4_address: 172.20.0.19
     ports:
       - "${DEV_WEB_PORT:-8002}:8000"
     environment:
@@ -173,16 +178,17 @@ services:
   web-local:
     <<: *web-base
     profiles: [local]
+    container_name: monopoly_web_local
+    networks:
+      monopoly_network:
+        ipv4_address: 172.20.0.18
     ports:
       - "${LOCAL_WEB_PORT:-8003}:8000"
     environment:
       <<: *environment
       DB_HOST: db-local
-      SSO_ENABLED: "false"
-      LOCAL_USER: ${LOCAL_USER}
-      LOCAL_USER_PASSWORD: ${LOCAL_USER_PASSWORD}
-      LOCAL_ADMIN_USER: ${LOCAL_ADMIN_USER}
-      LOCAL_ADMIN_PASSWORD: ${LOCAL_ADMIN_PASSWORD}
+      SSO_ENABLED: "true"
+      AUTHENTIK_REDIRECT_URI: "http://localhost:${LOCAL_SSO_WEB_PORT:-8003}/auth/callback"
     depends_on:
       db-local:
         condition: service_healthy

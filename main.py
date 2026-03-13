@@ -61,7 +61,11 @@ def is_business_hours():
     """
     Check if the current time is within business hours (9 AM - 5 PM EST, Monday-Friday).
     Returns True if within business hours, False otherwise.
+    Only active when BUSINESS_HOURS_ENABLED is set to "true".
     """
+    if os.getenv("BUSINESS_HOURS_ENABLED", "false").lower() != "true":
+        return False
+
     # Get current time in EST
     est = pytz.timezone("US/Eastern")
     current_time = datetime.now(est)
@@ -298,7 +302,12 @@ def check_business_hours_restriction(request: Request, action_type="host"):
         current_time = datetime.now(est).strftime("%I:%M %p EST")
 
         return templates.TemplateResponse(
-            "business_hours.html", {"request": request, "current_time": current_time}
+            "business_hours.html",
+            {
+                "request": request,
+                "current_time": current_time,
+                "is_admin": bool(request.session.get("admin_username")),
+            },
         )
     return None
 
@@ -498,6 +507,18 @@ async def admin_bypass_get(request: Request):
     return RedirectResponse(url="/", status_code=303)
 
 
+@app.post("/admin-bypass-confirm")
+async def admin_bypass_confirm(
+    request: Request,
+    redirect_url: Annotated[Optional[str], Form()] = None,
+):
+    """One-click bypass for already-authenticated admins."""
+    if not request.session.get("admin_username"):
+        return RedirectResponse(url="/", status_code=303)
+    request.session["admin_bypass"] = True
+    return RedirectResponse(url=redirect_url or "/", status_code=303)
+
+
 @app.post("/admin-bypass")
 async def admin_bypass_post(
     request: Request,
@@ -636,6 +657,9 @@ async def lobby_post(
     current_session_code, current_session = get_session_for_user(username)
 
     if action == "create_game":
+        restriction_response = check_business_hours_restriction(request, "host")
+        if restriction_response:
+            return restriction_response
         if current_session_code:
             message = "You are already in a game session"
         else:
@@ -655,6 +679,9 @@ async def lobby_post(
                 current_session = game_sessions[current_session_code]
 
     elif action == "start_game":
+        restriction_response = check_business_hours_restriction(request, "host")
+        if restriction_response:
+            return restriction_response
         if not current_session_code:
             message = "You are not in any game session"
         else:
