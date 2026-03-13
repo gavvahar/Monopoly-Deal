@@ -302,7 +302,12 @@ def check_business_hours_restriction(request: Request, action_type="host"):
         current_time = datetime.now(est).strftime("%I:%M %p EST")
 
         return templates.TemplateResponse(
-            "business_hours.html", {"request": request, "current_time": current_time}
+            "business_hours.html",
+            {
+                "request": request,
+                "current_time": current_time,
+                "is_admin": bool(request.session.get("admin_username")),
+            },
         )
     return None
 
@@ -500,6 +505,18 @@ async def logout(request: Request):
 async def admin_bypass_get(request: Request):
     """Redirect GET requests to admin-bypass to home page."""
     return RedirectResponse(url="/", status_code=303)
+
+
+@app.post("/admin-bypass-confirm")
+async def admin_bypass_confirm(
+    request: Request,
+    redirect_url: Annotated[Optional[str], Form()] = None,
+):
+    """One-click bypass for already-authenticated admins."""
+    if not request.session.get("admin_username"):
+        return RedirectResponse(url="/", status_code=303)
+    request.session["admin_bypass"] = True
+    return RedirectResponse(url=redirect_url or "/", status_code=303)
 
 
 @app.post("/admin-bypass")
