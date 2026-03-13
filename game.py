@@ -6,7 +6,6 @@ import random
 import cards
 import rules
 
-
 # ---------------- Card / Deck ----------------
 
 
@@ -43,9 +42,7 @@ def count_complete_sets(player):
         if color and color in set_sizes:
             color_counts[color] = color_counts.get(color, 0) + 1
     return sum(
-        1
-        for color, cnt in color_counts.items()
-        if rules.is_full_set(color, cnt)
+        1 for color, cnt in color_counts.items() if rules.is_full_set(color, cnt)
     )
 
 
