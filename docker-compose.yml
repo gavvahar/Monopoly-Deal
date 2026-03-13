@@ -188,7 +188,6 @@ services:
       <<: *environment
       DB_HOST: db-local
       SSO_ENABLED: "true"
-      AUTHENTIK_REDIRECT_URI: "http://localhost:${LOCAL_SSO_WEB_PORT:-8003}/auth/callback"
     depends_on:
       db-local:
         condition: service_healthy
@@ -212,6 +211,10 @@ services:
     profiles: [local]
     environment:
       <<: *environment
+      AUTHENTIK_URL: ${AUTHENTIK_URL}
+      PGADMIN_OAUTH2_CLIENT_ID: ${PGADMIN_OAUTH2_CLIENT_ID}
+      PGADMIN_OAUTH2_CLIENT_SECRET: ${PGADMIN_OAUTH2_CLIENT_SECRET}
+      PGADMIN_AUTHENTIK_APP_SLUG: ${PGADMIN_AUTHENTIK_APP_SLUG}
     ports:
       - "5050:80"
     networks:
@@ -221,6 +224,7 @@ services:
       - db-local
     volumes:
       - pgadmin_data:/var/lib/pgadmin
+      - ./Docker/pgadmin_config_local.py:/pgadmin4/config_local.py:ro
 
 volumes:
   pgdata_prod:
