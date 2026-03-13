@@ -1,22 +1,49 @@
 [
   {
     "fileName": "main-overview.mdc",
-    "description": "Complete system overview detailing the core game session management system, business hours restrictions, admin bypass functionality, and how these components interact"
+    "description": "Complete system overview with architecture and key components",
+    "sourceFilesToRead": [
+      "main.py",
+      "game.py",
+      "Docker/",
+      "requirements/",
+      "shell.nix"
+    ]
   },
   {
-    "fileName": "game-rules-algorithms.mdc",
-    "description": "Detailed documentation of the Monopoly Deal game rules implementation, including rent computation algorithms, build validation logic, and action card resolution systems"
+    "fileName": "data-models.mdc",
+    "description": "Database schema, card system, and core data structures",
+    "sourceFilesToRead": [
+      "database.py",
+      "cards.py",
+      "database_example.py"
+    ]
   },
   {
-    "fileName": "session-management-flow.mdc",
-    "description": "Comprehensive documentation of the game session lifecycle, including creation, joining, and management flows, along with player limit enforcement and state management"
+    "fileName": "auth-admin-flow.mdc",
+    "description": "Authentication, 2FA, and admin access patterns",
+    "sourceFilesToRead": [
+      "templates/admin_login.html",
+      "templates/admin_2fa_setup.html",
+      "templates/admin.html"
+    ]
   },
   {
-    "fileName": "authentication-flow.mdc",
-    "description": "Documentation of the custom TOTP-based 2FA system for admin access, including the bypass mechanism for business hours restrictions and session-based authentication persistence"
+    "fileName": "game-rules-logic.mdc",
+    "description": "Core game mechanics and business rules implementation",
+    "sourceFilesToRead": [
+      "game.py",
+      "rules.py",
+      "cards.py"
+    ]
   },
   {
-    "fileName": "business-hours-system.mdc",
-    "description": "Detailed documentation of the business hours restriction system, including time-zone handling, restriction rules, and interaction with the admin bypass functionality"
+    "fileName": "frontend-architecture.mdc",
+    "description": "UI components, templates, and frontend integration",
+    "sourceFilesToRead": [
+      "templates/",
+      "static/style.css",
+      "static/theme.js"
+    ]
   }
 ]

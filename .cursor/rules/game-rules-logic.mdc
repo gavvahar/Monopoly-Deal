@@ -1,0 +1,56 @@
+---
+description: Specification for card-based automotive-themed Monopoly Deal variant game rules and mechanics
+---
+
+
+# game-rules-logic
+
+## Core Card System (Importance: 90/100)
+
+### Property Cards
+- Car-themed properties organized by manufacturer (Lexus, Tesla, etc.)
+- Value-based property system reflecting real car market dynamics
+- Wild cards with multi-manufacturer compatibility
+
+### Action Cards 
+- "Garage Takeover" - property acquisition mechanism
+- "Track Day Fees" - specialized rent collection
+- "Cut the Engine" - defensive action card (Just Say No variant)
+
+## Game Rules Implementation (Importance: 85/100)
+
+### Property Collection Rules
+- Set completion requirements based on car manufacturers
+- Collection value calculations reflecting car rarity/value
+- Building mechanics adapted for automotive theme
+
+### Rent Mechanics
+- Custom rent calculation based on completed car collections
+- Manufacturer-based multipliers
+- Property value adjustments based on car market dynamics
+
+### Payment System
+- Specialized trade mechanics for car properties
+- Value-based transaction resolution
+- Multi-property payment handling
+
+## Game State Management (Importance: 80/100)
+
+### Deck Management
+- Automotive-themed deck composition
+- Car property distribution rules
+- Action card ratios for game balance
+
+### Win Conditions
+- Victory based on completing specific car collections
+- Manufacturer set requirements
+- Value thresholds for winning combinations
+
+### Turn Structure
+- Property placement limitations
+- Action card usage rules
+- Collection building progression
+
+$END$
+
+ If you're using this file in context, clearly say in italics in one small line that "Context added by Giga game-rules-logic" along with specifying exactly what information was used from this file in a human-friendly way, instead of using kebab-case use normal sentence case.
