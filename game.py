@@ -169,6 +169,7 @@ def start_game(player_names):
     return {
         "players": players,
         "deck": deck,
+        "discard": [],
         "started": True,
         "current_player_idx": 0,
         "draws_done": False,
@@ -179,14 +180,38 @@ def start_game(player_names):
     }
 
 
+# ---------------- Deck / Discard Helpers ----------------
+
+
+def _reshuffle_if_needed(state):
+    """Reshuffle discard pile into deck when deck is empty."""
+    if not state["deck"] and state.get("discard"):
+        state["deck"] = state["discard"][:]
+        state["discard"] = []
+        random.shuffle(state["deck"])
+
+
+def draw_cards_for_player(state, player, n):
+    """Draw up to n cards for player, reshuffling discard if needed. Returns count drawn."""
+    drawn = 0
+    for _ in range(n):
+        _reshuffle_if_needed(state)
+        if not state["deck"]:
+            break
+        player["hand"].append(state["deck"].pop())
+        drawn += 1
+    return drawn
+
+
 # ---------------- Game Actions ----------------
 
 
 def draw_card(state):
-    """Draw a card for current player."""
+    """Draw a card for the current player."""
+    player = state["players"][state["current_player_idx"]]
+    _reshuffle_if_needed(state)
     if not state["deck"]:
         return "Deck is empty!"
-    player = state["players"][state["current_player_idx"]]
     player["hand"].append(state["deck"].pop())
     return f"{player['name']} drew a card."
 
@@ -208,6 +233,24 @@ def bank_action_card(state, card_idx):
     state["plays_this_turn"] += 1
     player["bank"].append(card)
     return f"{player['name']} banked {card['name']} as {card['value']}M."
+
+
+def discard_card(state, card_idx):
+    """Discard a card from current player's hand to the discard pile (no play count used).
+    Only allowed when hand exceeds the 7-card limit."""
+    player = state["players"][state["current_player_idx"]]
+    hand = player["hand"]
+    hand_limit = rules.get_turn_limits()["hand_limit"]
+    if len(hand) <= hand_limit:
+        return f"Hand is at the {hand_limit}-card limit — nothing to discard."
+    if card_idx < 0 or card_idx >= len(hand):
+        return "Invalid card index."
+    card = hand.pop(card_idx)
+    state.setdefault("discard", []).append(card)
+    remaining = len(hand) - hand_limit
+    if remaining > 0:
+        return f"{player['name']} discarded {card['name']}. Still need to discard {remaining} more."
+    return f"{player['name']} discarded {card['name']}."
 
 
 def play_card(
@@ -262,7 +305,8 @@ def play_card(
         return f"{player['name']} placed {card['name']} as {card['color']} property."
 
     if card_type == "action":
-        return _handle_action(
+        hand_len_before = len(hand)
+        result = _handle_action(
             state,
             card,
             actor_idx,
@@ -273,9 +317,13 @@ def play_card(
             target_color,
             own_card_idx,
         )
+        if len(hand) == hand_len_before:  # card was not undone — send to discard
+            state.setdefault("discard", []).append(card)
+        return result
 
     if card_type == "rent":
-        return _handle_rent(
+        hand_len_before = len(hand)
+        result = _handle_rent(
             state,
             card,
             actor_idx,
@@ -284,6 +332,9 @@ def play_card(
             target_player_name,
             target_color,
         )
+        if len(hand) == hand_len_before:  # card was not undone — send to discard
+            state.setdefault("discard", []).append(card)
+        return result
 
     return f"{player['name']} played {card['name']}."
 
@@ -308,11 +359,7 @@ def _handle_action(
 
     # Green Light (Pass Go): draw 2 cards immediately
     if name == "Green Light":
-        drawn = 0
-        for _ in range(2):
-            if state["deck"]:
-                actor["hand"].append(state["deck"].pop())
-                drawn += 1
+        drawn = draw_cards_for_player(state, actor, 2)
         return f"{actor['name']} played Green Light and drew {drawn} card(s)."
 
     # Turbo Charge (Double The Rent): double the next rent charged
@@ -552,16 +599,13 @@ def _handle_rent(
 
 
 def next_turn(state):
-    """End current player's turn (enforce hand limit), advance to next player."""
+    """End current player's turn and advance to next player.
+    Returns an error string if the player still has more than 7 cards, None on success."""
     finishing_player = state["players"][state["current_player_idx"]]
     hand_limit = rules.get_turn_limits()["hand_limit"]
-    # Auto-discard lowest-value cards down to hand limit
-    while len(finishing_player["hand"]) > hand_limit:
-        min_idx = min(
-            range(len(finishing_player["hand"])),
-            key=lambda i: finishing_player["hand"][i].get("value", 0),
-        )
-        finishing_player["hand"].pop(min_idx)
+    excess = len(finishing_player["hand"]) - hand_limit
+    if excess > 0:
+        return f"Cannot end turn: discard {excess} card{'s' if excess > 1 else ''} first (hand limit is {hand_limit})."
 
     state["current_player_idx"] = (state["current_player_idx"] + 1) % len(
         state["players"]
@@ -569,6 +613,7 @@ def next_turn(state):
     state["draws_done"] = False
     state["plays_this_turn"] = 0
     state["double_rent_count"] = 0
+    return None
 
 
 # ---------------- Optional Helper ----------------

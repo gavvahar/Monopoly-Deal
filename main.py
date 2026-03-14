@@ -20,6 +20,8 @@ from game import (
     next_turn,
     bank_action_card,
     count_complete_sets,
+    discard_card,
+    draw_cards_for_player,
 )
 from rules import (
     draw_count,
@@ -800,12 +802,12 @@ def build_play_context(request, game_state, session_code, username, message=""):
     # Auto-draw if it's this player's turn and draws haven't happened yet
     if current_player["name"] == username and not game_state.get("draws_done", True):
         n = draw_count(len(viewing_player["hand"]))
-        for _ in range(n):
-            if game_state["deck"]:
-                viewing_player["hand"].append(game_state["deck"].pop())
+        draw_cards_for_player(game_state, viewing_player, n)
         game_state["draws_done"] = True
     is_my_turn = current_player["name"] == username
     plays_remaining = max(0, 3 - game_state.get("plays_this_turn", 0))
+    hand_limit = rules.get_turn_limits()["hand_limit"]
+    need_discard = is_my_turn and len(viewing_player["hand"]) > hand_limit
     viewing_stats = get_player_stats(viewing_player, game_state, viewing_player_idx)
     all_player_stats = {
         p["name"]: get_player_stats(p, game_state, i)
@@ -842,6 +844,8 @@ def build_play_context(request, game_state, session_code, username, message=""):
         "double_rent_count": game_state.get("double_rent_count", 0),
         "rent_card_color_map": rent_card_color_map,
         "build_eligible": get_build_eligible_colors(),
+        "need_discard": need_discard,
+        "hand_limit": hand_limit,
     }
 
 
@@ -916,9 +920,12 @@ async def play_post(
     elif action == "bank":
         if card_idx is not None:
             message = bank_action_card(game_state, card_idx)
+    elif action == "discard":
+        if card_idx is not None:
+            message = discard_card(game_state, card_idx)
     elif action == "end_turn":
-        next_turn(game_state)
-        message = "Turn ended."
+        error = next_turn(game_state)
+        message = error if error else "Turn ended."
 
     ctx = build_play_context(request, game_state, session_code, username, message)
     return templates.TemplateResponse("play.html", ctx)

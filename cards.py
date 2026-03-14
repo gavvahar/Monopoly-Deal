@@ -101,20 +101,8 @@ PROPERTY_WILD_DEFINITIONS = [
         "count": 1,
     },
     {
-        "name": "Wild McLaren",
-        "colors": ("McLaren",),
-        "value": 2,
-        "count": 2,
-    },
-    {
         "name": "Wild McLaren/Bugatti",
         "colors": ("McLaren", "Bugatti"),
-        "value": 2,
-        "count": 1,
-    },
-    {
-        "name": "Wild Bugatti",
-        "colors": ("Bugatti",),
         "value": 2,
         "count": 1,
     },
@@ -149,7 +137,7 @@ ACTION_CARD_DEFINITIONS = {
         "description": "Steal one property card from another player (not from a complete set).",
     },
     "Tow Trade": {
-        "count": 4,
+        "count": 3,
         "value": 3,
         "type": "action",
         "description": "Force a swap: exchange one of your properties for one of theirs (not from complete sets).",

@@ -149,7 +149,7 @@
         <div class="hand-section__bar">
           <h3 class="hand-title">
             Your Hand
-            <span class="hand-count-badge">{{ viewing_player.hand | length }}</span>
+            <span class="hand-count-badge {% if need_discard %}hand-count-badge--over{% endif %}">{{ viewing_player.hand | length }}</span>
           </h3>
           {% if is_my_turn and game_state.started %}
           <form method="post" action="/play/{{ session_code }}" class="draw-form">
@@ -159,6 +159,11 @@
           <span class="refresh-notice" id="refresh-countdown">↻</span>
           {% endif %}
         </div>
+        {% if need_discard %}
+        <div class="discard-warning">
+          ⚠ Discard {{ viewing_player.hand | length - hand_limit }} card{{ 's' if viewing_player.hand | length - hand_limit > 1 else '' }} — you cannot end your turn until you're at {{ hand_limit }}.
+        </div>
+        {% endif %}
 
         <div class="hand-cards {% if not viewing_player.hand %}hand-cards--empty{% endif %}">
           {% if viewing_player.hand %}
@@ -192,6 +197,13 @@
               {# Action buttons — only on your turn #}
               {% if is_my_turn and game_state.started %}
               <div class="hcard__actions">
+                {% if need_discard %}
+                <form method="post" action="/play/{{ session_code }}">
+                  <input type="hidden" name="card_idx" value="{{ loop.index0 }}" />
+                  <input type="hidden" name="action"   value="discard" />
+                  <button type="submit" class="btn-discard-card">Discard</button>
+                </form>
+                {% else %}
                 <form method="post" action="/play/{{ session_code }}" class="play-form">
                   <input type="hidden" name="card_idx"          value="{{ loop.index0 }}" />
                   <input type="hidden" name="action"            value="play" />
@@ -214,6 +226,7 @@
                   <input type="hidden" name="action"   value="bank" />
                   <button type="submit" class="btn-bank-card">Bank {{ card.value }}M</button>
                 </form>
+                {% endif %}
                 {% endif %}
               </div>
               {% endif %}

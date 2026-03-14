@@ -1357,6 +1357,35 @@ body.game-page {
 }
 .btn-bank-card:hover { background: var(--bg-tertiary); color: var(--text-primary); }
 
+.btn-discard-card {
+  width: 100%;
+  padding: 6px 0;
+  border: none;
+  border-radius: 6px;
+  background: #c0392b;
+  color: #fff;
+  font-size: 0.82em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.btn-discard-card:hover { background: #a93226; transform: scale(1.02); }
+
+.discard-warning {
+  margin: 0 0 8px 0;
+  padding: 8px 12px;
+  background: rgba(231, 76, 60, 0.15);
+  border: 1px solid rgba(231, 76, 60, 0.4);
+  border-radius: 8px;
+  color: #e74c3c;
+  font-size: 0.88em;
+  font-weight: 600;
+}
+
+.hand-count-badge--over {
+  background: #e74c3c !important;
+}
+
 /* ══════════════════════════════════════════════════════
    TARGETING MODAL
 ══════════════════════════════════════════════════════ */
