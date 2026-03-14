@@ -4,7 +4,8 @@
       "Bash(python -m pytest test_fastapi.py -v)",
       "Bash(pip install:*)",
       "Bash(python test_fastapi.py)",
-      "Bash(python -c \":*)"
+      "Bash(python -c \":*)",
+      "Bash(python -c \"from main import app; print\\(''''OK''''\\)\")"
     ]
   }
 }
