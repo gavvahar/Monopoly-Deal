@@ -13,8 +13,21 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from dotenv import load_dotenv
-from game import start_game, draw_card, play_card, next_turn
-from rules import draw_count, get_set_sizes, is_full_set
+from game import (
+    start_game,
+    draw_card,
+    play_card,
+    next_turn,
+    bank_action_card,
+    count_complete_sets,
+)
+from rules import (
+    draw_count,
+    get_set_sizes,
+    is_full_set,
+    get_rent_card_colors,
+    get_build_eligible_colors,
+)
 from database import (
     initialize_database,
     get_usernames,
@@ -207,25 +220,36 @@ PROPERTY_COLOR_MAP = {
 }
 
 
-def get_player_stats(player):
+def get_player_stats(player, game_state=None, player_idx=None):
     """Compute display stats for a player: bank total, properties grouped by color, complete sets."""
     bank_total = sum(c.get("value", 0) for c in player.get("bank", []))
     set_sizes = get_set_sizes()
     properties_by_color = {}
     for card in player.get("properties", []):
-        color = card.get("color", "Wild")
+        # Wild cards use their assigned "color" field once placed
+        color = card.get("color", "Unassigned")
         if color not in properties_by_color:
             properties_by_color[color] = []
         properties_by_color[color].append(card)
-    color_progress = {
-        color: {
+    color_progress = {}
+    for color, cards_in_color in properties_by_color.items():
+        has_house = False
+        has_hotel = False
+        if game_state is not None and player_idx is not None:
+            has_house = (
+                game_state.get("houses", {}).get(player_idx, {}).get(color, False)
+            )
+            has_hotel = (
+                game_state.get("hotels", {}).get(player_idx, {}).get(color, False)
+            )
+        color_progress[color] = {
             "count": len(cards_in_color),
             "required": set_sizes.get(color, 0),
             "complete": color in set_sizes and is_full_set(color, len(cards_in_color)),
+            "has_house": has_house,
+            "has_hotel": has_hotel,
         }
-        for color, cards_in_color in properties_by_color.items()
-    }
-    complete_sets = sum(1 for info in color_progress.values() if info["complete"])
+    complete_sets = count_complete_sets(player)
     return {
         "bank_total": bank_total,
         "properties_by_color": properties_by_color,
@@ -769,6 +793,10 @@ def build_play_context(request, game_state, session_code, username, message=""):
         (p for p in game_state["players"] if p["name"] == username),
         current_player,
     )
+    viewing_player_idx = next(
+        (i for i, p in enumerate(game_state["players"]) if p["name"] == username),
+        game_state["current_player_idx"],
+    )
     # Auto-draw if it's this player's turn and draws haven't happened yet
     if current_player["name"] == username and not game_state.get("draws_done", True):
         n = draw_count(len(viewing_player["hand"]))
@@ -778,13 +806,26 @@ def build_play_context(request, game_state, session_code, username, message=""):
         game_state["draws_done"] = True
     is_my_turn = current_player["name"] == username
     plays_remaining = max(0, 3 - game_state.get("plays_this_turn", 0))
-    viewing_stats = get_player_stats(viewing_player)
-    all_player_stats = {p["name"]: get_player_stats(p) for p in game_state["players"]}
+    viewing_stats = get_player_stats(viewing_player, game_state, viewing_player_idx)
+    all_player_stats = {
+        p["name"]: get_player_stats(p, game_state, i)
+        for i, p in enumerate(game_state["players"])
+    }
+    # Sanitized opponent data for JS (excludes hand cards for privacy)
+    opponent_players = [p for p in game_state["players"] if p["name"] != username]
+    opponent_players_js = [
+        {"name": p["name"], "hand_count": len(p["hand"]), "properties": p["properties"]}
+        for p in opponent_players
+    ]
+    rent_card_color_map = {
+        name: colors for name, colors in get_rent_card_colors().items()
+    }
     return {
         "request": request,
         "game_state": game_state,
         "current_player": current_player,
         "viewing_player": viewing_player,
+        "viewing_player_idx": viewing_player_idx,
         "is_my_turn": is_my_turn,
         "plays_remaining": plays_remaining,
         "session_code": session_code,
@@ -793,6 +834,14 @@ def build_play_context(request, game_state, session_code, username, message=""):
         "all_player_stats": all_player_stats,
         "color_map": PROPERTY_COLOR_MAP,
         "deck_size": len(game_state["deck"]),
+        "opponent_players": opponent_players,
+        "opponent_players_js": opponent_players_js,
+        "all_colors": list(get_set_sizes().keys()),
+        "houses": game_state.get("houses", {}),
+        "hotels": game_state.get("hotels", {}),
+        "double_rent_count": game_state.get("double_rent_count", 0),
+        "rent_card_color_map": rent_card_color_map,
+        "build_eligible": get_build_eligible_colors(),
     }
 
 
@@ -825,6 +874,10 @@ async def play_post(
     session_code: str,
     action: Annotated[str, Form(...)],
     card_idx: Annotated[Optional[int], Form()] = None,
+    target_player_name: Annotated[Optional[str], Form()] = None,
+    target_card_idx: Annotated[Optional[int], Form()] = None,
+    target_color: Annotated[Optional[str], Form()] = None,
+    own_card_idx: Annotated[Optional[int], Form()] = None,
 ):
     """Handle POST request for game actions with session code."""
     username = get_current_user(request)
@@ -850,9 +903,19 @@ async def play_post(
         message = draw_card(game_state)
     elif action == "play":
         if card_idx is not None:
-            message = play_card(game_state, card_idx)
+            message = play_card(
+                game_state,
+                card_idx,
+                target_player_name=target_player_name or None,
+                target_card_idx=target_card_idx,
+                target_color=target_color or None,
+                own_card_idx=own_card_idx,
+            )
             if not game_state["started"]:
                 session["started"] = False
+    elif action == "bank":
+        if card_idx is not None:
+            message = bank_action_card(game_state, card_idx)
     elif action == "end_turn":
         next_turn(game_state)
         message = "Turn ended."

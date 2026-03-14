@@ -143,22 +143,22 @@ ACTION_CARD_DEFINITIONS = {
         "description": "Steal an opponent's complete collection.",
     },
     "Sneak Swap": {
-        "count": 2,
+        "count": 3,
         "value": 3,
         "type": "action",
-        "description": "Swap one car card with another player.",
+        "description": "Steal one property card from another player (not from a complete set).",
     },
     "Tow Trade": {
         "count": 4,
         "value": 3,
         "type": "action",
-        "description": "Force a trade between one of your cars and theirs.",
+        "description": "Force a swap: exchange one of your properties for one of theirs (not from complete sets).",
     },
     "Repo Notice": {
         "count": 3,
         "value": 3,
         "type": "action",
-        "description": "Collect 3M from a player of your choice.",
+        "description": "Collect 5M from a player of your choice.",
     },
     "Track Day Fees": {
         "count": 3,
@@ -167,7 +167,7 @@ ACTION_CARD_DEFINITIONS = {
         "description": "All rivals must pay you 2M.",
     },
     "Green Light": {
-        "count": 8,
+        "count": 10,
         "value": 1,
         "type": "action",
         "description": "Draw two cards from the deck.",
@@ -194,25 +194,7 @@ ACTION_CARD_DEFINITIONS = {
         "count": 3,
         "value": 4,
         "type": "action",
-        "description": "Cancel the last action played on you.",
-    },
-    "Pit Crew Bonus": {
-        "count": 1,
-        "value": 2,
-        "type": "action",
-        "description": "Draw one card and gain an extra action this turn.",
-    },
-    "Midnight Run": {
-        "count": 1,
-        "value": 3,
-        "type": "action",
-        "description": "Take another full turn after this one.",
-    },
-    "Collector's Auction": {
-        "count": 1,
-        "value": 4,
-        "type": "action",
-        "description": "Claim any single car card from each opponent.",
+        "description": "Cancel any action played against you. Can also be banked as 4M.",
     },
 }
 

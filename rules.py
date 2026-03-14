@@ -56,16 +56,17 @@ def get_turn_limits() -> Dict[str, int]:
 
 def get_action_kinds() -> Dict[str, str]:
     """Return target semantics for common action cards."""
-    # Target semantics for common actions
     return {
-        "Sneak Swap": "single",
-        "Repo Notice": "single",
-        "Tow Trade": "single",
+        "Green Light": "none",
+        "Turbo Charge": "none",
         "Track Day Fees": "all",
+        "Repo Notice": "single",
+        "Sneak Swap": "single",
+        "Tow Trade": "single",
         "Garage Takeover": "steal_set",
-        "Pit Crew Bonus": "all",
-        "Midnight Run": "single",
-        "Collector's Auction": "steal_set",
+        "Garage Upgrade": "own_set",
+        "Luxury Showroom": "own_housed_set",
+        "Cut the Engine": "response_only",
         # rent cards marked separately via get_rent_card_colors()
     }
 
