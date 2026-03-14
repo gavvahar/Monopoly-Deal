@@ -146,7 +146,7 @@ function buildWildColors(colors) {
         selectOnly(container, null);
         mstate.targetColor = color;
         refreshConfirm();
-      })
+      }),
     );
   });
   show("section-wild-color");
@@ -154,7 +154,9 @@ function buildWildColors(colors) {
 
 function buildRentSection(cardName) {
   const rentColors = GAME_DATA.rentCardColorMap[cardName] || [];
-  const myColors = Object.keys(GAME_DATA.viewingStats.properties_by_color || {});
+  const myColors = Object.keys(
+    GAME_DATA.viewingStats.properties_by_color || {},
+  );
   const eligible = rentColors.filter((c) => myColors.includes(c));
 
   const container = clearContainer("rent-color-options");
@@ -163,14 +165,14 @@ function buildRentSection(cardName) {
       '<p class="empty-option">No matching properties owned.</p>';
   } else {
     eligible.forEach((color) => {
-      const count =
-        (GAME_DATA.viewingStats.properties_by_color[color] || []).length;
+      const count = (GAME_DATA.viewingStats.properties_by_color[color] || [])
+        .length;
       container.appendChild(
         makeColorBtn(color, `${color} (${count} owned)`, () => {
           selectOnly(container, null);
           mstate.targetColor = color;
           refreshConfirm();
-        })
+        }),
       );
     });
   }
@@ -255,7 +257,7 @@ function buildStealColorSection(playerName) {
           selectOnly(container, null);
           mstate.targetColor = color;
           refreshConfirm();
-        })
+        }),
       );
     });
   }
@@ -277,7 +279,7 @@ function buildTargetCardSection(playerName) {
         selectOnly(container, null);
         mstate.targetCardIdx = idx;
         refreshConfirm();
-      })
+      }),
     );
     shown++;
   });
@@ -305,7 +307,9 @@ function buildOwnColorSection(cardName) {
   });
 
   const label =
-    key === "Garage_Upgrade" ? "Add house (+3M rent) to:" : "Add hotel (+4M rent) to:";
+    key === "Garage_Upgrade"
+      ? "Add house (+3M rent) to:"
+      : "Add hotel (+4M rent) to:";
   setText("own-color-label", label);
   const container = clearContainer("own-color-options");
 
@@ -322,7 +326,7 @@ function buildOwnColorSection(cardName) {
           selectOnly(container, null);
           mstate.targetColor = color;
           refreshConfirm();
-        })
+        }),
       );
     });
   }
@@ -343,7 +347,7 @@ function buildOwnCardSection() {
         selectOnly(container, null);
         mstate.ownCardIdx = idx;
         refreshConfirm();
-      })
+      }),
     );
     shown++;
   });
@@ -388,7 +392,8 @@ function refreshConfirm() {
     ok = targetColor !== null;
   } else if (cardType === "rent") {
     ok = targetColor !== null;
-    if (cardName === "Rent Wild (Any Collection)") ok = ok && targetPlayer !== null;
+    if (cardName === "Rent Wild (Any Collection)")
+      ok = ok && targetPlayer !== null;
   } else {
     const needs = TARGETED_ACTIONS[actionKey(cardName)] || [];
     ok = needs.every((n) => {
@@ -436,7 +441,9 @@ function makePropBtn(prop, onClick) {
 
 function selectOnly(container, activeBtn) {
   if (!container) return;
-  container.querySelectorAll("button").forEach((b) => b.classList.remove("selected"));
+  container
+    .querySelectorAll("button")
+    .forEach((b) => b.classList.remove("selected"));
   if (activeBtn) activeBtn.classList.add("selected");
 }
 

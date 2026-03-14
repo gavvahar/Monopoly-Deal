@@ -7,18 +7,15 @@
     <link rel="stylesheet" href="/static/style.css" />
   </head>
   <body class="game-page">
-
     {# ── Toast message ──────────────────────────────────────────────────── #}
     {% if message %}
-    <div class="game-toast
-      {% if 'wins' in message %} game-toast--win
-      {% elif 'Error' in message or 'Invalid' in message or 'Cannot' in message or 'requires' in message or 'Choose' in message %} game-toast--warn
-      {% else %} game-toast--info{% endif %}">
+    <div
+      class="game-toast {% if 'wins' in message %} game-toast--win {% elif 'Error' in message or 'Invalid' in message or 'Cannot' in message or 'requires' in message or 'Choose' in message %} game-toast--warn {% else %} game-toast--info{% endif %}"
+    >
       {{ message }}
     </div>
-    {% endif %}
-
-    {# ── Sticky header ──────────────────────────────────────────────────── #}
+    {% endif %} {# ── Sticky header
+    ──────────────────────────────────────────────────── #}
     <header class="game-header">
       <div class="gh-left">
         <a href="/lobby" class="btn-ghost">← Lobby</a>
@@ -27,17 +24,23 @@
 
       <div class="gh-center">
         {% if not game_state.started %}
-          <span class="turn-pill turn-pill--over">🏆 GAME OVER</span>
+        <span class="turn-pill turn-pill--over">🏆 GAME OVER</span>
         {% elif is_my_turn %}
-          <span class="turn-pill turn-pill--mine">YOUR TURN</span>
+        <span class="turn-pill turn-pill--mine">YOUR TURN</span>
         {% else %}
-          <span class="turn-pill turn-pill--waiting">{{ current_player.name }}'s turn</span>
+        <span class="turn-pill turn-pill--waiting"
+          >{{ current_player.name }}'s turn</span
+        >
         {% endif %}
         <div class="gh-stats">
           <span title="Cards left in deck">🃏 {{ deck_size }}</span>
-          <span title="Plays remaining this turn">▶ {{ plays_remaining }}/3</span>
+          <span title="Plays remaining this turn"
+            >▶ {{ plays_remaining }}/3</span
+          >
           {% if double_rent_count > 0 %}
-          <span class="doubled-pill" title="Rent multiplier active">⚡ ×{{ 2 ** double_rent_count }}</span>
+          <span class="doubled-pill" title="Rent multiplier active"
+            >⚡ ×{{ 2 ** double_rent_count }}</span
+          >
           {% endif %}
         </div>
       </div>
@@ -45,11 +48,17 @@
       <div class="gh-right">
         {% if is_my_turn and game_state.started %}
         <form method="post" action="/play/{{ session_code }}">
-          <button name="action" value="end_turn" class="btn-end-turn">End Turn ↵</button>
+          <button name="action" value="end_turn" class="btn-end-turn">
+            End Turn ↵
+          </button>
         </form>
         {% endif %}
-        <select id="theme-toggle" class="theme-toggle theme-toggle--compact"
-                aria-label="Theme" title="Switch theme">
+        <select
+          id="theme-toggle"
+          class="theme-toggle theme-toggle--compact"
+          aria-label="Theme"
+          title="Switch theme"
+        >
           <option value="light">☀️</option>
           <option value="dark">🌙</option>
           <option value="system">🔧</option>
@@ -58,12 +67,11 @@
     </header>
 
     <div class="game-board">
-
-      {# ── Opponents ──────────────────────────────────────────────────────── #}
-      {% if opponent_players %}
+      {# ── Opponents ────────────────────────────────────────────────────────
+      #} {% if opponent_players %}
       <section class="opponents-section">
-        {% for opp in opponent_players %}
-        {% set os = all_player_stats[opp.name] %}
+        {% for opp in opponent_players %} {% set os = all_player_stats[opp.name]
+        %}
         <div class="opp-board">
           <div class="opp-board__header">
             <span class="opp-name">{{ opp.name }}</span>
@@ -72,38 +80,40 @@
             <span class="opp-chip">🃏 {{ opp.hand | length }}</span>
           </div>
           <div class="color-sets-row">
-            {% if os.properties_by_color %}
-              {% for color, props in os.properties_by_color.items() %}
-              {% set cp = os.color_progress[color] %}
-              <div class="color-set {% if cp.complete %}color-set--done{% endif %}"
-                   style="--sc: {{ color_map.get(color, '#888') }}">
-                <div class="cs-label">
-                  {{ color }}
-                  <span class="cs-frac">{{ cp.count }}/{{ cp.required }}</span>
-                  {% if cp.complete %}✅{% endif %}
-                  {% if cp.has_house %}🏠{% endif %}
-                  {% if cp.has_hotel %}🏨{% endif %}
-                </div>
-                <div class="cs-cards">
-                  {% for prop in props %}
-                  <div class="mini-prop" title="[{{ loop.index0 }}] {{ prop.name }} · {{ prop.value }}M">
-                    <div class="mp-name">{{ prop.name }}</div>
-                    <div class="mp-val">{{ prop.value }}M</div>
-                  </div>
-                  {% endfor %}
-                </div>
+            {% if os.properties_by_color %} {% for color, props in
+            os.properties_by_color.items() %} {% set cp =
+            os.color_progress[color] %}
+            <div
+              class="color-set {% if cp.complete %}color-set--done{% endif %}"
+              style="--sc: {{ color_map.get(color, '#888') }}"
+            >
+              <div class="cs-label">
+                {{ color }}
+                <span class="cs-frac">{{ cp.count }}/{{ cp.required }}</span>
+                {% if cp.complete %}✅{% endif %} {% if cp.has_house %}🏠{%
+                endif %} {% if cp.has_hotel %}🏨{% endif %}
               </div>
-              {% endfor %}
-            {% else %}
+              <div class="cs-cards">
+                {% for prop in props %}
+                <div
+                  class="mini-prop"
+                  title="[{{ loop.index0 }}] {{ prop.name }} · {{ prop.value }}M"
+                >
+                  <div class="mp-name">{{ prop.name }}</div>
+                  <div class="mp-val">{{ prop.value }}M</div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% endfor %} {% else %}
             <span class="no-props-msg">No properties yet</span>
             {% endif %}
           </div>
         </div>
         {% endfor %}
       </section>
-      {% endif %}
-
-      {# ── Your board ─────────────────────────────────────────────────────── #}
+      {% endif %} {# ── Your board
+      ─────────────────────────────────────────────────────── #}
       <section class="your-board">
         <div class="your-board__header">
           <div class="yb-title">
@@ -112,48 +122,64 @@
           </div>
           <div class="yb-stats">
             <span>💰 <strong>{{ viewing_stats.bank_total }}M</strong></span>
-            <span>✅ <strong>{{ viewing_stats.complete_sets }}/3 sets</strong></span>
+            <span
+              >✅
+              <strong>{{ viewing_stats.complete_sets }}/3 sets</strong></span
+            >
           </div>
         </div>
         <div class="color-sets-row">
-          {% if viewing_stats.properties_by_color %}
-            {% for color, props in viewing_stats.properties_by_color.items() %}
-            {% set cp = viewing_stats.color_progress[color] %}
-            <div class="color-set {% if cp.complete %}color-set--done{% endif %}"
-                 style="--sc: {{ color_map.get(color, '#888') }}">
-              <div class="cs-label">
-                {{ color }}
-                <span class="cs-frac">{{ cp.count }}/{{ cp.required }}</span>
-                {% if cp.complete %}✅{% endif %}
-                {% if cp.has_house %}🏠{% endif %}
-                {% if cp.has_hotel %}🏨{% endif %}
-              </div>
-              <div class="cs-cards">
-                {% for prop in props %}
-                <div class="mini-prop mini-prop--own" title="[{{ loop.index0 }}] {{ prop.name }} · {{ prop.value }}M">
-                  <div class="mp-name">{{ prop.name }}</div>
-                  <div class="mp-val">{{ prop.value }}M</div>
-                </div>
-                {% endfor %}
-              </div>
+          {% if viewing_stats.properties_by_color %} {% for color, props in
+          viewing_stats.properties_by_color.items() %} {% set cp =
+          viewing_stats.color_progress[color] %}
+          <div
+            class="color-set {% if cp.complete %}color-set--done{% endif %}"
+            style="--sc: {{ color_map.get(color, '#888') }}"
+          >
+            <div class="cs-label">
+              {{ color }}
+              <span class="cs-frac">{{ cp.count }}/{{ cp.required }}</span>
+              {% if cp.complete %}✅{% endif %} {% if cp.has_house %}🏠{% endif
+              %} {% if cp.has_hotel %}🏨{% endif %}
             </div>
-            {% endfor %}
-          {% else %}
+            <div class="cs-cards">
+              {% for prop in props %}
+              <div
+                class="mini-prop mini-prop--own"
+                title="[{{ loop.index0 }}] {{ prop.name }} · {{ prop.value }}M"
+              >
+                <div class="mp-name">{{ prop.name }}</div>
+                <div class="mp-val">{{ prop.value }}M</div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endfor %} {% else %}
           <span class="no-props-msg">No properties yet</span>
           {% endif %}
         </div>
       </section>
 
-      {# ── Hand ────────────────────────────────────────────────────────────── #}
+      {# ── Hand ──────────────────────────────────────────────────────────────
+      #}
       <section class="hand-section">
         <div class="hand-section__bar">
           <h3 class="hand-title">
             Your Hand
-            <span class="hand-count-badge {% if need_discard %}hand-count-badge--over{% endif %}">{{ viewing_player.hand | length }}</span>
+            <span
+              class="hand-count-badge {% if need_discard %}hand-count-badge--over{% endif %}"
+              >{{ viewing_player.hand | length }}</span
+            >
           </h3>
           {% if is_my_turn and game_state.started %}
-          <form method="post" action="/play/{{ session_code }}" class="draw-form">
-            <button name="action" value="draw" class="btn-draw">Draw Card</button>
+          <form
+            method="post"
+            action="/play/{{ session_code }}"
+            class="draw-form"
+          >
+            <button name="action" value="draw" class="btn-draw">
+              Draw Card
+            </button>
           </form>
           {% elif game_state.started %}
           <span class="refresh-notice" id="refresh-countdown">↻</span>
@@ -161,134 +187,197 @@
         </div>
         {% if need_discard %}
         <div class="discard-warning">
-          ⚠ Discard {{ viewing_player.hand | length - hand_limit }} card{{ 's' if viewing_player.hand | length - hand_limit > 1 else '' }} — you cannot end your turn until you're at {{ hand_limit }}.
+          ⚠ Discard {{ viewing_player.hand | length - hand_limit }} card{{ 's'
+          if viewing_player.hand | length - hand_limit > 1 else '' }} — you
+          cannot end your turn until you're at {{ hand_limit }}.
         </div>
         {% endif %}
 
-        <div class="hand-cards {% if not viewing_player.hand %}hand-cards--empty{% endif %}">
-          {% if viewing_player.hand %}
-            {% for card in viewing_player.hand %}
-            <div class="hcard-wrap">
-              {# Card visual #}
-              <div class="hcard hcard--{{ card.card_type }}"
-                   {% if card.card_type == 'property' and card.color %}
-                   style="--card-color: {{ color_map.get(card.color, '#2980b9') }};"
-                   {% elif card.card_type == 'wild' and card.colors %}
-                   style="--card-color: {{ color_map.get(card.colors[0], '#9b59b6') }};"
-                   {% endif %}>
-                <div class="hcard__corner hcard__corner--tl">{{ card.value }}M</div>
-                <div class="hcard__body">
-                  <div class="hcard__type">{{ card.card_type | upper }}</div>
-                  <div class="hcard__name">{{ card.name }}</div>
-                  {% if card.description %}
-                  <div class="hcard__desc">{{ card.description }}</div>
-                  {% endif %}
-                  {% if card.colors and card.colors | length > 1 %}
-                  <div class="hcard__pips">
-                    {% for c in card.colors %}
-                    <span class="color-pip" style="background: {{ color_map.get(c, '#888') }};"></span>
-                    {% endfor %}
-                  </div>
-                  {% endif %}
-                </div>
-                <div class="hcard__corner hcard__corner--br">{{ card.value }}M</div>
+        <div
+          class="hand-cards {% if not viewing_player.hand %}hand-cards--empty{% endif %}"
+        >
+          {% if viewing_player.hand %} {% for card in viewing_player.hand %}
+          <div class="hcard-wrap">
+            {# Card visual #}
+            <div class="hcard hcard--{{ card.card_type }}"
+              {%- if card.card_type == 'property' and card.color %} style="--card-color: {{ color_map.get(card.color, '#2980b9') }};"
+              {%- elif card.card_type == 'wild' and card.colors %} style="--card-color: {{ color_map.get(card.colors[0], '#9b59b6') }};"
+              {%- endif %}>
+              <div class="hcard__corner hcard__corner--tl">
+                {{ card.value }}M
               </div>
+              <div class="hcard__body">
+                <div class="hcard__type">{{ card.card_type | upper }}</div>
+                <div class="hcard__name">{{ card.name }}</div>
+                {% if card.description %}
+                <div class="hcard__desc">{{ card.description }}</div>
+                {% endif %} {% if card.colors and card.colors | length > 1 %}
+                <div class="hcard__pips">
+                  {% for c in card.colors %}
+                  <span
+                    class="color-pip"
+                    style="background: {{ color_map.get(c, '#888') }};"
+                  ></span>
+                  {% endfor %}
+                </div>
+                {% endif %}
+              </div>
+              <div class="hcard__corner hcard__corner--br">
+                {{ card.value }}M
+              </div>
+            </div>
 
-              {# Action buttons — only on your turn #}
-              {% if is_my_turn and game_state.started %}
-              <div class="hcard__actions">
-                {% if need_discard %}
-                <form method="post" action="/play/{{ session_code }}">
-                  <input type="hidden" name="card_idx" value="{{ loop.index0 }}" />
-                  <input type="hidden" name="action"   value="discard" />
-                  <button type="submit" class="btn-discard-card">Discard</button>
-                </form>
-                {% else %}
-                <form method="post" action="/play/{{ session_code }}" class="play-form">
-                  <input type="hidden" name="card_idx"          value="{{ loop.index0 }}" />
-                  <input type="hidden" name="action"            value="play" />
-                  <input type="hidden" name="target_player_name" class="field-target-player" value="" />
-                  <input type="hidden" name="target_card_idx"   class="field-target-card"   value="" />
-                  <input type="hidden" name="target_color"      class="field-target-color"  value="" />
-                  <input type="hidden" name="own_card_idx"      class="field-own-card"      value="" />
-                  <button type="button" class="btn-play-card"
-                          onclick="handlePlay(this,
+            {# Action buttons — only on your turn #} {% if is_my_turn and
+            game_state.started %}
+            <div class="hcard__actions">
+              {% if need_discard %}
+              <form method="post" action="/play/{{ session_code }}">
+                <input
+                  type="hidden"
+                  name="card_idx"
+                  value="{{ loop.index0 }}"
+                />
+                <input type="hidden" name="action" value="discard" />
+                <button type="submit" class="btn-discard-card">Discard</button>
+              </form>
+              {% else %}
+              <form
+                method="post"
+                action="/play/{{ session_code }}"
+                class="play-form"
+              >
+                <input
+                  type="hidden"
+                  name="card_idx"
+                  value="{{ loop.index0 }}"
+                />
+                <input type="hidden" name="action" value="play" />
+                <input
+                  type="hidden"
+                  name="target_player_name"
+                  class="field-target-player"
+                  value=""
+                />
+                <input
+                  type="hidden"
+                  name="target_card_idx"
+                  class="field-target-card"
+                  value=""
+                />
+                <input
+                  type="hidden"
+                  name="target_color"
+                  class="field-target-color"
+                  value=""
+                />
+                <input
+                  type="hidden"
+                  name="own_card_idx"
+                  class="field-own-card"
+                  value=""
+                />
+                <button
+                  type="button"
+                  class="btn-play-card"
+                  onclick="handlePlay(this,
                             {{ loop.index0 }},
                             {{ card.name | tojson }},
                             {{ card.card_type | tojson }},
-                            {{ card.colors | tojson if card.colors else 'null' }})">
-                    Play
-                  </button>
-                </form>
-                {% if card.card_type in ['action', 'rent'] %}
-                <form method="post" action="/play/{{ session_code }}">
-                  <input type="hidden" name="card_idx" value="{{ loop.index0 }}" />
-                  <input type="hidden" name="action"   value="bank" />
-                  <button type="submit" class="btn-bank-card">Bank {{ card.value }}M</button>
-                </form>
-                {% endif %}
-                {% endif %}
-              </div>
-              {% endif %}
+                            {{ card.colors | tojson if card.colors else 'null' }})"
+                >
+                  Play
+                </button>
+              </form>
+              {% if card.card_type in ['action', 'rent'] %}
+              <form method="post" action="/play/{{ session_code }}">
+                <input
+                  type="hidden"
+                  name="card_idx"
+                  value="{{ loop.index0 }}"
+                />
+                <input type="hidden" name="action" value="bank" />
+                <button type="submit" class="btn-bank-card">
+                  Bank {{ card.value }}M
+                </button>
+              </form>
+              {% endif %} {% endif %}
             </div>
-            {% endfor %}
-          {% else %}
-            <p class="hand-empty-msg">No cards in hand</p>
+            {% endif %}
+          </div>
+          {% endfor %} {% else %}
+          <p class="hand-empty-msg">No cards in hand</p>
           {% endif %}
         </div>
       </section>
-
-    </div>{# .game-board #}
-
-    {# ── Targeting Modal ─────────────────────────────────────────────────── #}
+    </div>
+    {# .game-board #} {# ── Targeting Modal
+    ─────────────────────────────────────────────────── #}
     <dialog id="play-modal" class="play-modal">
       <div class="pm-inner">
         <div class="pm-head">
           <h3 id="modal-title">Play Card</h3>
-          <button type="button" onclick="closeModal()" class="btn-modal-close" title="Cancel">✕</button>
+          <button
+            type="button"
+            onclick="closeModal()"
+            class="btn-modal-close"
+            title="Cancel"
+          >
+            ✕
+          </button>
         </div>
 
-        <div id="section-wild-color"   class="pm-section" style="display:none">
+        <div id="section-wild-color" class="pm-section" style="display: none">
           <p class="pm-label">Assign color to this wild card:</p>
           <div id="wild-color-options" class="option-chips"></div>
         </div>
 
-        <div id="section-rent-color"   class="pm-section" style="display:none">
+        <div id="section-rent-color" class="pm-section" style="display: none">
           <p class="pm-label">Charge rent on:</p>
           <div id="rent-color-options" class="option-chips"></div>
         </div>
 
-        <div id="section-target-player" class="pm-section" style="display:none">
+        <div
+          id="section-target-player"
+          class="pm-section"
+          style="display: none"
+        >
           <p class="pm-label" id="target-player-label">Target opponent:</p>
           <div id="target-player-buttons" class="player-options"></div>
         </div>
 
-        <div id="section-steal-color"  class="pm-section" style="display:none">
+        <div id="section-steal-color" class="pm-section" style="display: none">
           <p class="pm-label" id="steal-color-label">Their complete set:</p>
           <div id="steal-color-options" class="option-chips"></div>
         </div>
 
-        <div id="section-own-color"    class="pm-section" style="display:none">
+        <div id="section-own-color" class="pm-section" style="display: none">
           <p class="pm-label" id="own-color-label">Your complete set:</p>
           <div id="own-color-options" class="option-chips"></div>
         </div>
 
-        <div id="section-target-card"  class="pm-section" style="display:none">
+        <div id="section-target-card" class="pm-section" style="display: none">
           <p class="pm-label">Select their property:</p>
           <div id="target-card-options" class="prop-options"></div>
         </div>
 
-        <div id="section-own-card"     class="pm-section" style="display:none">
+        <div id="section-own-card" class="pm-section" style="display: none">
           <p class="pm-label">Select your property to give:</p>
-          <div id="own-card-options"    class="prop-options"></div>
+          <div id="own-card-options" class="prop-options"></div>
         </div>
 
         <div class="pm-footer">
-          <button type="button" id="btn-confirm" onclick="confirmPlay()"
-                  class="btn-confirm-play" disabled>
+          <button
+            type="button"
+            id="btn-confirm"
+            onclick="confirmPlay()"
+            class="btn-confirm-play"
+            disabled
+          >
             Confirm Play
           </button>
-          <button type="button" onclick="closeModal()" class="btn-cancel-play">Cancel</button>
+          <button type="button" onclick="closeModal()" class="btn-cancel-play">
+            Cancel
+          </button>
         </div>
       </div>
     </dialog>
