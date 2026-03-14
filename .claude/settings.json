@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest test_fastapi.py -v)",
+      "Bash(pip install:*)",
+      "Bash(python test_fastapi.py)",
+      "Bash(python -c \":*)"
+    ]
+  }
+}
