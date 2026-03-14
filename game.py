@@ -600,7 +600,8 @@ def _handle_rent(
 
 def next_turn(state):
     """End current player's turn and advance to next player.
-    Returns an error string if the player still has more than 7 cards, None on success."""
+    Returns an error string if the player still has more than 7 cards, None on success.
+    """
     finishing_player = state["players"][state["current_player_idx"]]
     hand_limit = rules.get_turn_limits()["hand_limit"]
     excess = len(finishing_player["hand"]) - hand_limit
