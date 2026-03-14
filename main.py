@@ -29,6 +29,7 @@ from rules import (
     is_full_set,
     get_rent_card_colors,
     get_build_eligible_colors,
+    get_turn_limits,
 )
 from database import (
     initialize_database,
@@ -806,7 +807,7 @@ def build_play_context(request, game_state, session_code, username, message=""):
         game_state["draws_done"] = True
     is_my_turn = current_player["name"] == username
     plays_remaining = max(0, 3 - game_state.get("plays_this_turn", 0))
-    hand_limit = rules.get_turn_limits()["hand_limit"]
+    hand_limit = get_turn_limits()["hand_limit"]
     need_discard = is_my_turn and len(viewing_player["hand"]) > hand_limit
     viewing_stats = get_player_stats(viewing_player, game_state, viewing_player_idx)
     all_player_stats = {
