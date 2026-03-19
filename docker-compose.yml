@@ -23,7 +23,6 @@ x-database-service-base: &database-service-base
     context: .
     dockerfile: Docker/Dockerfile.database
   pull_policy: build
-  restart: unless-stopped
   environment:
     <<: *environment
   volumes:
@@ -52,7 +51,6 @@ services:
     <<: *db-base
     container_name: monopoly_postgres_prod
     profiles: [prod]
-    restart: unless-stopped
     ports:
       - "5432:5432"
     networks:
@@ -65,7 +63,6 @@ services:
     <<: *database-service-base
     profiles: [prod]
     container_name: monopoly_database_service_prod
-    restart: unless-stopped
     networks:
       monopoly_network:
         ipv4_address: 172.20.0.10
@@ -80,7 +77,6 @@ services:
     <<: *web-base
     profiles: [prod]
     container_name: monopoly_web_prod
-    restart: unless-stopped
     networks:
       monopoly_network:
         ipv4_address: 172.20.0.11
@@ -101,7 +97,6 @@ services:
   db-dev:
     <<: *db-base
     container_name: monopoly_postgres_dev
-    restart: unless-stopped
     profiles: [dev]
     ports:
       - "5434:5432"
@@ -113,7 +108,6 @@ services:
 
   database_service-dev:
     <<: *database-service-base
-    restart: unless-stopped
     profiles: [dev]
     container_name: monopoly_database_service_dev
     networks:
@@ -128,7 +122,6 @@ services:
 
   web-dev:
     <<: *web-base
-    restart: unless-stopped
     profiles: [dev]
     container_name: monopoly_web_dev
     networks:
@@ -150,7 +143,6 @@ services:
     build:
       context: .
       dockerfile: Docker/Dockerfile
-    restart: unless-stopped
     profiles: [dev]
     working_dir: /app
     depends_on:
@@ -174,7 +166,6 @@ services:
   database_service-local:
     <<: *database-service-base
     profiles: [local]
-    restart: unless-stopped
     container_name: monopoly_database_service_local
     networks:
       monopoly_network:
@@ -188,7 +179,6 @@ services:
 
   web-local:
     <<: *web-base
-    restart: unless-stopped
     profiles: [local]
     container_name: monopoly_web_local
     networks:
@@ -210,7 +200,6 @@ services:
     build:
       context: .
       dockerfile: Docker/Dockerfile
-    restart: unless-stopped
     profiles: [local]
     working_dir: /app
     depends_on:
