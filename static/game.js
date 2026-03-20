@@ -3,8 +3,8 @@
  * Handles the targeting modal, form submission, and auto-refresh.
  */
 
-// Populated by the template via a <script> block
-let GAME_DATA = {};
+// Populated by the inline <script> block in play.html before this file loads
+// Do NOT redeclare GAME_DATA here — a `let` binding would shadow window.GAME_DATA
 
 // Cards that require targeting (beyond a simple direct play)
 const TARGETED_ACTIONS = {
@@ -380,7 +380,6 @@ function refreshConfirm() {
   const {
     cardName,
     cardType,
-    cardColors,
     targetPlayer,
     targetCardIdx,
     targetColor,
