@@ -199,28 +199,10 @@
           {% if viewing_player.hand %} {% for card in viewing_player.hand %}
           <div class="hcard-wrap">
             {# Card visual #}
-            <div
-              class="hcard hcard--{{ card.card_type }}"
-              {%-
-              if
-              card.card_type=""
-              ="property"
-              and
-              card.color
-              %}
-              style="--card-color: {{ color_map.get(card.color, '#2980b9') }};"
-              {%-
-              elif
-              card.card_type=""
-              ="wild"
-              and
-              card.colors
-              %}
-              style="--card-color: {{ color_map.get(card.colors[0], '#9b59b6') }};"
-              {%-
-              endif
-              %}
-            >
+            <div class="hcard hcard--{{ card.card_type }}"
+              {%- if card.card_type == 'property' and card.color %} style="--card-color: {{ color_map.get(card.color, '#2980b9') }};"
+              {%- elif card.card_type == 'wild' and card.colors %} style="--card-color: {{ color_map.get(card.colors[0], '#9b59b6') }};"
+              {%- endif %}>
               <div class="hcard__corner hcard__corner--tl">
                 {{ card.value }}M
               </div>
