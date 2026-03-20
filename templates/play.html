@@ -279,11 +279,11 @@
                 <button
                   type="button"
                   class="btn-play-card"
-                  onclick="handlePlay(this,
+                  onclick='handlePlay(this,
                             {{ loop.index0 }},
                             {{ card.name | tojson }},
                             {{ card.card_type | tojson }},
-                            {{ card.colors | tojson if card.colors else 'null' }})"
+                            {{ card.colors | tojson if card.colors else "null" }})'
                 >
                   Play
                 </button>
