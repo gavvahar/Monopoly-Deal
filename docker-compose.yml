@@ -143,6 +143,7 @@ services:
     build:
       context: .
       dockerfile: Docker/Dockerfile
+    pull_policy: build
     profiles: [dev]
     working_dir: /app
     depends_on:
@@ -200,6 +201,7 @@ services:
     build:
       context: .
       dockerfile: Docker/Dockerfile
+    pull_policy: build
     profiles: [local]
     working_dir: /app
     depends_on:
