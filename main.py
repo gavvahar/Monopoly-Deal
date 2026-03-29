@@ -371,9 +371,9 @@ def check_business_hours_restriction(request: Request, action_type="host"):
         current_time = datetime.now(est).strftime("%I:%M %p EST")
 
         return templates.TemplateResponse(
+            request,
             "business_hours.html",
             {
-                "request": request,
                 "current_time": current_time,
                 "is_admin": bool(request.session.get("admin_username")),
             },
@@ -397,7 +397,7 @@ async def login_get(request: Request):
     if request.session.get("username"):
         return RedirectResponse(url="/lobby", status_code=303)
     return templates.TemplateResponse(
-        "login.html", {"request": request, "sso_enabled": sso_enabled()}
+        request, "login.html", {"sso_enabled": sso_enabled()}
     )
 
 
@@ -416,9 +416,9 @@ async def login_post(
         return RedirectResponse(url="/lobby", status_code=303)
 
     return templates.TemplateResponse(
+        request,
         "login.html",
         {
-            "request": request,
             "sso_enabled": False,
             "error": "Invalid username or password.",
         },
@@ -458,9 +458,9 @@ async def auth_callback(
 
     if error:
         return templates.TemplateResponse(
+            request,
             "login.html",
             {
-                "request": request,
                 "sso_enabled": True,
                 "error": f"Login failed: {error}",
             },
@@ -468,9 +468,9 @@ async def auth_callback(
 
     if not code or state != request.session.get("oauth_state"):
         return templates.TemplateResponse(
+            request,
             "login.html",
             {
-                "request": request,
                 "sso_enabled": True,
                 "error": "Invalid OAuth state. Please try again.",
             },
@@ -497,9 +497,9 @@ async def auth_callback(
 
     if token_response.status_code != 200:
         return templates.TemplateResponse(
+            request,
             "login.html",
             {
-                "request": request,
                 "sso_enabled": True,
                 "error": "Failed to retrieve token from Authentik.",
             },
@@ -516,9 +516,9 @@ async def auth_callback(
 
     if userinfo_response.status_code != 200:
         return templates.TemplateResponse(
+            request,
             "login.html",
             {
-                "request": request,
                 "sso_enabled": True,
                 "error": "Failed to retrieve user info from Authentik.",
             },
@@ -538,9 +538,9 @@ async def auth_callback(
 
     if not in_admin_group and not in_user_group:
         return templates.TemplateResponse(
+            request,
             "login.html",
             {
-                "request": request,
                 "sso_enabled": True,
                 "error": "You do not have access to this application.",
             },
@@ -606,9 +606,9 @@ async def admin_bypass_post(
         current_time = datetime.now(est).strftime("%I:%M %p EST")
 
         return templates.TemplateResponse(
+            request,
             "business_hours.html",
             {
-                "request": request,
                 "current_time": current_time,
                 "error": "Invalid admin password.",
             },
@@ -620,9 +620,9 @@ async def admin_bypass_post(
         current_time = datetime.now(est).strftime("%I:%M %p EST")
 
         return templates.TemplateResponse(
+            request,
             "business_hours.html",
             {
-                "request": request,
                 "current_time": current_time,
                 "error": "Invalid 2FA code. Please check your authenticator app.",
             },
@@ -638,7 +638,7 @@ async def admin_login_get(request: Request):
     """Admin login page (local profile only)."""
     if sso_enabled():
         return RedirectResponse(url="/login", status_code=303)
-    return templates.TemplateResponse("admin_login.html", {"request": request})
+    return templates.TemplateResponse(request, "admin_login.html", {})
 
 
 @app.post("/admin-login")
@@ -657,7 +657,7 @@ async def admin_login_post(
         return RedirectResponse(url="/admin", status_code=303)
     error_text = "Invalid admin username or password."
     return templates.TemplateResponse(
-        "admin_login.html", {"request": request, "error": error_text}
+        request, "admin_login.html", {"error": error_text}
     )
 
 
@@ -673,8 +673,9 @@ async def admin_2fa_setup(request: Request):
     totp_secret = get_admin_totp_secret()
 
     return templates.TemplateResponse(
+        request,
         "admin_2fa_setup.html",
-        {"request": request, "qr_code": qr_code, "totp_secret": totp_secret},
+        {"qr_code": qr_code, "totp_secret": totp_secret},
     )
 
 
@@ -699,9 +700,9 @@ async def lobby_get(request: Request):
     session_code, session = get_session_for_user(username)
 
     return templates.TemplateResponse(
+        request,
         "lobby.html",
         {
-            "request": request,
             "username": username,
             "is_admin": bool(get_current_admin(request)),
             "current_session": session_code,
@@ -777,9 +778,9 @@ async def lobby_post(
             message = "You are not in any game session"
 
     return templates.TemplateResponse(
+        request,
         "lobby.html",
         {
-            "request": request,
             "username": username,
             "is_admin": bool(get_current_admin(request)),
             "current_session": current_session_code,
@@ -824,7 +825,6 @@ def build_play_context(request, game_state, session_code, username, message=""):
         name: colors for name, colors in get_rent_card_colors().items()
     }
     return {
-        "request": request,
         "game_state": game_state,
         "current_player": current_player,
         "viewing_player": viewing_player,
@@ -870,7 +870,7 @@ async def play_get(request: Request, session_code: str):
         return RedirectResponse(url="/lobby", status_code=303)
 
     ctx = build_play_context(request, session["game_state"], session_code, username)
-    return templates.TemplateResponse("play.html", ctx)
+    return templates.TemplateResponse(request, "play.html", ctx)
 
 
 @app.post("/play/{session_code}")
@@ -929,7 +929,7 @@ async def play_post(
         message = error if error else "Turn ended."
 
     ctx = build_play_context(request, game_state, session_code, username, message)
-    return templates.TemplateResponse("play.html", ctx)
+    return templates.TemplateResponse(request, "play.html", ctx)
 
 
 # Fallback route for old /play endpoint (redirect to lobby)
@@ -967,7 +967,7 @@ async def admin_get(request: Request):
         print(f"Database error in admin_get: {e}")
         db_users = set()
     return templates.TemplateResponse(
-        "admin.html", {"request": request, "users": db_users, "message": ""}
+        request, "admin.html", {"users": db_users, "message": ""}
     )
 
 
@@ -999,7 +999,7 @@ async def admin_post(
         db_users = set()
         message = "Database connection error. Cannot manage users at this time."
     return templates.TemplateResponse(
-        "admin.html", {"request": request, "users": db_users, "message": message}
+        request, "admin.html", {"users": db_users, "message": message}
     )
 
 
@@ -1009,11 +1009,11 @@ async def database_view(request: Request):
     try:
         users_data = get_all_users()
         return templates.TemplateResponse(
-            "database.html", {"request": request, "users_data": users_data}
+            request, "database.html", {"users_data": users_data}
         )
     except Exception as e:
         return templates.TemplateResponse(
-            "database.html", {"request": request, "users_data": [], "error": str(e)}
+            request, "database.html", {"users_data": [], "error": str(e)}
         )
 
 
